@@ -10,9 +10,9 @@ export const authApi = {
     return response.data;
   },
 
-  logout: async () => {
+  logout: async (refreshToken: string) => {
     try {
-      await apiClient.post("/auth/logout");
+      await apiClient.post("/auth/logout", { refreshToken });
     } catch (error) {
       console.error("Logout error:", error);
     }

@@ -2,7 +2,8 @@ import { configureStore } from "@reduxjs/toolkit";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
 // import Reducers
-import authReducer from "../features/auth/store/authSlice";
+import authReducer from "@/features/auth/store/authSlice";
+import uiReducer from "@/store/uiSlice";
 
 export const store = configureStore({
   reducer: {
@@ -11,6 +12,7 @@ export const store = configureStore({
     // schedules: schedulesReducer,
     // etc.
     auth: authReducer,
+    ui: uiReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
