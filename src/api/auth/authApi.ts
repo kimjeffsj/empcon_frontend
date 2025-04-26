@@ -10,20 +10,16 @@ export const authApi = {
     return response.data;
   },
 
-  logout: async (refreshToken: string) => {
+  logout: async () => {
     try {
-      await apiClient.post("/auth/logout", { refreshToken });
+      await apiClient.post("/auth/logout");
     } catch (error) {
       console.error("Logout error:", error);
     }
-
-    localStorage.removeItem("token");
   },
 
   refreshToken: async () => {
-    const response = await apiClient.post<{ message: string; token: string }>(
-      "/auth/refresh"
-    );
+    const response = await apiClient.post<{ message: string }>("/auth/refresh");
     return response.data;
   },
 

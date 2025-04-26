@@ -1,8 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Provider } from "react-redux";
-import { store, useAppDispatch } from "./store";
+import { store, useAppDispatch, useAppSelector } from "./store";
+import { getCurrentUser } from "./features/auth/store/authSlice";
 import AppRouter from "./routes";
-import { fetchCurrentUser } from "./features/auth/store/authSlice";
 
 // ThemeProvider to manage dark/light mode
 const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
@@ -29,11 +29,32 @@ const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 // Auth initializer component to fetch user data on app start
 const AuthInitializer = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useAppDispatch();
+  const { isLoading } = useAppSelector((state) => state.auth);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    // Try to fetch current user data - this will verify if the user is authenticated
-    dispatch(fetchCurrentUser());
+    const checkAuth = async () => {
+      try {
+        await dispatch(getCurrentUser()).unwrap();
+      } catch (error) {
+        console.error("Authentication check failed:", error);
+      } finally {
+        setAuthChecked(true);
+      }
+    };
+
+    checkAuth();
   }, [dispatch]);
+
+  if (isLoading || !authChecked) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="text-center">
+          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
 
   return <>{children}</>;
 };

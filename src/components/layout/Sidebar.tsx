@@ -75,7 +75,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const sidebarContent = (
     <div className="flex h-full flex-col gap-2 py-4">
       <div className="flex items-center justify-between px-3 py-2">
-        <h2 className="text-lg font-semibold tracking-tight">메뉴</h2>
+        <h2 className="text-lg font-semibold tracking-tight">Menu</h2>
       </div>
       <div className="flex-1">
         <nav className="grid gap-1 px-2">

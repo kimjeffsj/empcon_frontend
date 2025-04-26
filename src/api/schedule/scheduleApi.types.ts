@@ -43,7 +43,7 @@ export interface TimeClock {
   totalMinutes?: number;
 }
 
-// AdjustmentRequest 인터페이스 정의
+// AdjustmentRequest interface definition
 export interface AdjustmentRequest {
   id: string;
   requestType: string;
