@@ -1,16 +1,12 @@
 import { useAppSelector } from "@/store";
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
   requiredRole?: "ADMIN" | "MANAGER" | "EMPLOYEE";
 }
 
-export function ProtectedRoute({
-  children,
-  requiredRole,
-}: ProtectedRouteProps) {
+export function ProtectedRoute({ requiredRole }: ProtectedRouteProps) {
   const { isAuthenticated, user, isLoading } = useAppSelector(
     (state) => state.auth
   );
@@ -25,7 +21,10 @@ export function ProtectedRoute({
       requiredRole &&
       user?.role !== requiredRole
     ) {
-      navigate("/unauthorized", { replace: true });
+      // Allow ADMINs to access MANAGER routes as well
+      if (user?.role !== "ADMIN") {
+        navigate("/unauthorized", { replace: true });
+      }
     }
   }, [isAuthenticated, isLoading, navigate, requiredRole, user?.role]);
 
@@ -40,5 +39,6 @@ export function ProtectedRoute({
     );
   }
 
-  return isAuthenticated ? <>{children}</> : null;
+  // Render Outlet if authenticated and authorized (or no specific role required)
+  return isAuthenticated ? <Outlet /> : null;
 }
