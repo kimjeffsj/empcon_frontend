@@ -1,3 +1,6 @@
+import { Department } from "../department/department.types";
+import { EmployeeRole } from "../employee/employeeApi.types";
+
 export interface LoginCredentials {
   email: string;
   password: string;
@@ -15,14 +18,9 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: "ADMIN" | "MANAGER" | "EMPLOYEE";
+  role: EmployeeRole;
   department?: Department | null;
   position?: Position | null;
-}
-
-export interface Department {
-  id: string;
-  name: string;
 }
 
 export interface Position {

@@ -6,9 +6,21 @@ import {
 
 export type EmployeeListResponse = PaginatedResponse<Employee>;
 
+export enum EmployeeRole {
+  EMPLOYEE = "EMPLOYEE",
+  MANAGER = "MANAGER",
+  ADMIN = "ADMIN",
+}
+
+export enum PayPeriodType {
+  SEMI_MONTHLY = "SEMI_MONTHLY",
+  BI_WEEKLY = "BI_WEEKLY",
+  MONTHLY = "MONTHLY",
+}
+
 export interface EmployeeQueryParams extends SearchQueryParams {
   departmentId?: string;
-  role?: "ADMIN" | "MANAGER" | "EMPLOYEE"; // 역할은 구체적인 타입으로 지정하는 것이 좋음
+  role?: EmployeeRole;
   isActive?: boolean;
 }
 
@@ -17,7 +29,7 @@ export interface Employee extends User {
   hireDate: string;
   terminationDate?: string;
   payRate?: number;
-  payPeriodType?: "SEMI_MONTHLY" | "BI_WEEKLY" | "MONTHLY";
+  payPeriodType?: PayPeriodType;
   overtimeEnabled: boolean;
   profile?: {
     address?: string;
@@ -35,11 +47,11 @@ export interface CreateEmployeeDto {
   dateOfBirth?: string;
   hireDate: string;
   terminationDate?: string;
-  role?: "ADMIN" | "MANAGER" | "EMPLOYEE";
+  role?: EmployeeRole;
   departmentId?: string;
   positionId?: string;
   payRate?: number;
-  payPeriodType?: "SEMI_MONTHLY" | "BI_WEEKLY" | "MONTHLY";
+  payPeriodType?: PayPeriodType;
   overtimeEnabled?: boolean;
   profile?: {
     address?: string;

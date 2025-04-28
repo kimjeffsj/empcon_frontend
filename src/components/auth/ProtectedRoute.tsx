@@ -1,9 +1,10 @@
+import { EmployeeRole } from "@/api/employee/employeeApi.types";
 import { useAppSelector } from "@/store";
 import { useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 
 interface ProtectedRouteProps {
-  requiredRole?: "ADMIN" | "MANAGER" | "EMPLOYEE";
+  requiredRole?: EmployeeRole;
 }
 
 export function ProtectedRoute({ requiredRole }: ProtectedRouteProps) {
