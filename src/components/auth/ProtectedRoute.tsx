@@ -23,7 +23,7 @@ export function ProtectedRoute({ requiredRole }: ProtectedRouteProps) {
       user?.role !== requiredRole
     ) {
       // Allow ADMINs to access MANAGER routes as well
-      if (user?.role !== "ADMIN") {
+      if (user?.role !== EmployeeRole.ADMIN) {
         navigate("/unauthorized", { replace: true });
       }
     }

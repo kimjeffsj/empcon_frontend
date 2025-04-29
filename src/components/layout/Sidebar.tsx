@@ -1,4 +1,5 @@
 import { useAppSelector } from "@/store";
+import { EmployeeRole } from "@/api/employee/employeeApi.types";
 import {
   Briefcase,
   CalendarDays,
@@ -28,49 +29,49 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       title: "Dashboard",
       icon: <Home className="h-5 w-5" />,
       path: "/dashboard",
-      access: ["ADMIN", "MANAGER", "EMPLOYEE"],
+      access: [EmployeeRole.ADMIN, EmployeeRole.MANAGER, EmployeeRole.EMPLOYEE],
     },
     {
       title: "Employees",
       icon: <Users className="h-5 w-5" />,
       path: "/employees",
-      access: ["ADMIN", "MANAGER"],
+      access: [EmployeeRole.ADMIN, EmployeeRole.MANAGER],
     },
     {
       title: "Schedules",
       icon: <CalendarDays className="h-5 w-5" />,
       path: "/schedules",
-      access: ["ADMIN", "MANAGER", "EMPLOYEE"],
+      access: [EmployeeRole.ADMIN, EmployeeRole.MANAGER, EmployeeRole.EMPLOYEE],
     },
     {
       title: "Time Clocks",
       icon: <Clock className="h-5 w-5" />,
       path: "/timeclocks",
-      access: ["ADMIN", "MANAGER", "EMPLOYEE"],
+      access: [EmployeeRole.ADMIN, EmployeeRole.MANAGER, EmployeeRole.EMPLOYEE],
     },
     {
       title: "Leaves",
       icon: <Briefcase className="h-5 w-5" />,
       path: "/leaves",
-      access: ["ADMIN", "MANAGER", "EMPLOYEE"],
+      access: [EmployeeRole.ADMIN, EmployeeRole.MANAGER, EmployeeRole.EMPLOYEE],
     },
     {
       title: "Payroll",
       icon: <DollarSign className="h-5 w-5" />,
       path: "/payroll",
-      access: ["ADMIN", "MANAGER"],
+      access: [EmployeeRole.ADMIN, EmployeeRole.MANAGER],
     },
     {
       title: "Reports",
       icon: <FileText className="h-5 w-5" />,
       path: "/reports",
-      access: ["ADMIN", "MANAGER"],
+      access: [EmployeeRole.ADMIN, EmployeeRole.MANAGER],
     },
   ];
 
-  const filteredItems = navigationItems.filter((item) =>
-    item.access.includes(user?.role || "")
-  );
+  const filteredItems = user?.role
+    ? navigationItems.filter((item) => item.access.includes(user.role))
+    : [];
 
   const sidebarContent = (
     <div className="flex h-full flex-col gap-2 py-4">

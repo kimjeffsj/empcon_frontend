@@ -1,3 +1,4 @@
+import { EmployeeRole } from "@/api/employee/employeeApi.types";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import LoginPage from "@/pages/auth/LoginPage";
 import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
@@ -57,7 +58,7 @@ export default function AppRouter() {
         </Route>
 
         {/* Manager-only routes */}
-        <Route element={<ProtectedRoute requiredRole="MANAGER" />}>
+        <Route element={<ProtectedRoute requiredRole={EmployeeRole.MANAGER} />}>
           {/* Employees */}
           <Route path="/employees" element={<EmployeesListPage />} />
           <Route path="/employees/new" element={<EmployeeCreatePage />} />
