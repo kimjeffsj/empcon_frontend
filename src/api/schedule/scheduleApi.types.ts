@@ -3,6 +3,7 @@ import {
   PaginatedResponse,
   SearchQueryParams,
 } from "../common/commonApi.types";
+import { TimeClock } from "../timeclock/timeClockApi.types";
 
 export type ScheduleListResponse = PaginatedResponse<Schedule>;
 
@@ -34,13 +35,6 @@ export interface Schedule {
   user: User;
   timeClocks?: TimeClock[];
   adjustmentRequests?: AdjustmentRequest[];
-}
-
-export interface TimeClock {
-  id: string;
-  clockInTime: string;
-  clockOutTime?: string;
-  totalMinutes?: number;
 }
 
 // AdjustmentRequest interface definition
