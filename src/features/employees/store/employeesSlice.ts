@@ -1,14 +1,14 @@
-import { PaginatedResponse } from "@/api/common/commonApi.types";
 import { employeeApi } from "@/api/employee/employeeApi";
 import {
   Employee,
+  EmployeeListResponse,
   EmployeeQueryParams,
 } from "@/api/employee/employeeApi.types";
 import { addAlert, setLoading } from "@/store/uiSlice";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 interface EmployeeState {
-  employees: PaginatedResponse<Employee> | null;
+  employees: EmployeeListResponse | null;
   currentEmployee: Employee | null;
   isLoading: boolean;
   error: string | null;
@@ -22,7 +22,7 @@ const initialState: EmployeeState = {
 };
 
 export const getEmployees = createAsyncThunk<
-  PaginatedResponse<Employee>,
+  EmployeeListResponse,
   EmployeeQueryParams | undefined,
   { rejectValue: { message: string } }
 >("employees/getEmployees", async (params, { dispatch, rejectWithValue }) => {
