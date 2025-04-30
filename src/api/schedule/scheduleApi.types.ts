@@ -8,7 +8,7 @@ import { TimeClock } from "../timeclock/timeClockApi.types";
 export type ScheduleListResponse = PaginatedResponse<Schedule>;
 
 export interface ScheduleQueryParams extends SearchQueryParams {
-  userId: string;
+  userId?: string;
   departmentId?: string;
   startDate?: string;
   endDate?: string;
@@ -56,6 +56,7 @@ export interface CreateScheduleDto {
   scheduleType?: "REGULAR" | "OVERTIME" | "HOLIDAY";
   isStatutoryHoliday?: boolean;
   notes?: string;
+  createdBy: string;
 }
 
 export interface UpdateScheduleDto extends Partial<CreateScheduleDto> {}

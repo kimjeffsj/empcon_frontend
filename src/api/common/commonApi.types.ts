@@ -13,8 +13,8 @@ export interface SuccessResponse<T> {
 }
 
 export interface PaginationQueryParams {
-  page?: number | string;
-  limit?: number | string;
+  page?: string; // Changed to string
+  limit?: string; // Changed to string
 }
 
 export interface SearchQueryParams extends PaginationQueryParams {

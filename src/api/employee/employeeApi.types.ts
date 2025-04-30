@@ -21,7 +21,7 @@ export enum PayPeriodType {
 export interface EmployeeQueryParams extends SearchQueryParams {
   departmentId?: string;
   role?: EmployeeRole;
-  isActive?: boolean;
+  isActive?: string; // Changed from boolean to string
 }
 
 export interface Employee extends User {

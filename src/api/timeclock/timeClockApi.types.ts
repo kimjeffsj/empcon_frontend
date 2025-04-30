@@ -11,7 +11,7 @@ export interface TimeClockQueryParams {
   departmentId?: string;
   startDate?: string;
   endDate?: string;
-  completed?: boolean | string;
+  completed?: string; // Changed from boolean | string to string
 }
 
 export interface TimeClock {
@@ -29,7 +29,7 @@ export interface TimeClock {
 }
 
 export interface ClockInDto {
-  userId?: string;
+  userId: string; // Made userId required
   scheduleId?: string;
   notes?: string;
 }
