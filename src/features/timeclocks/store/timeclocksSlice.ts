@@ -3,12 +3,13 @@ import {
   TimeClock,
   UpdateTimeClockDto,
   TimeClockQueryParams,
+  TimeClockListResponse,
 } from "@/api/timeclock/timeClockApi.types";
 import { addAlert, setLoading } from "@/store/uiSlice";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 interface TimeClocksState {
-  timeClocks: any | null;
+  timeClocks: TimeClockListResponse | null;
   currentTimeClock: TimeClock | null;
   activeTimeClock: TimeClock | null;
   isLoading: boolean;
@@ -363,9 +364,17 @@ const timeClocksSlice = createSlice({
             (tc: TimeClock) => tc.id !== action.payload // action.payload is the ID
           );
           // Optionally update pagination metadata if needed
-          if (state.timeClocks.meta) {
-            state.timeClocks.meta.totalItems -= 1;
-            // Adjust totalPages if necessary based on itemsPerPage
+          if (state.timeClocks) {
+            // Check if timeClocks exists
+            state.timeClocks.total -= 1; // Use top-level 'total'
+            // Recalculate totalPages
+            if (state.timeClocks.limit > 0) {
+              state.timeClocks.totalPages = Math.ceil(
+                state.timeClocks.total / state.timeClocks.limit
+              );
+            } else {
+              state.timeClocks.totalPages = state.timeClocks.total > 0 ? 1 : 0; // Handle limit 0 case
+            }
           }
         }
         // Clear current time clock if it's the one being deleted

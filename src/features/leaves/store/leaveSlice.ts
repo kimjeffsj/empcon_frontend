@@ -20,9 +20,9 @@ import {
 import { SearchQueryParams } from "@/api/common/commonApi.types";
 
 interface LeavesState {
-  leaveTypes: LeaveTypeListResponse | null; // Changed to store the full response
-  userLeaveBalances: UserLeaveBalancesResponse | null; // Changed to store user-specific balances response
-  leaveBalances: LeaveBalanceListResponse | null; // For general balance listing if needed
+  leaveTypes: LeaveTypeListResponse | null;
+  userLeaveBalances: UserLeaveBalancesResponse | null;
+  leaveBalances: LeaveBalanceListResponse | null;
   leaveRequests: LeaveRequestListResponse | null;
   currentLeaveRequest: LeaveRequest | null;
   isLoading: boolean;

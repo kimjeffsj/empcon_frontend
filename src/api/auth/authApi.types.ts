@@ -20,6 +20,7 @@ export interface User {
   firstName: string;
   lastName: string;
   role: EmployeeRole;
+  payRate: number;
   department?: Department | null;
   position?: Position | null;
 }

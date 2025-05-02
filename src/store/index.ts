@@ -6,6 +6,11 @@ import authReducer from "@/features/auth/store/authSlice";
 import uiReducer from "@/store/uiSlice";
 import schedulesReducer from "@/features/schedules/store/schedulesSlice";
 import positionsReducer from "@/features/positions/store/positionSlice";
+import leavesReducer from "@/features/leaves/store/leaveSlice"; // Added
+import timeclocksReducer from "@/features/timeclocks/store/timeclocksSlice"; // Added
+import payrollReducer from "@/features/payroll/store/payrollSlice"; // Added
+import employeesReducer from "@/features/employees/store/employeesSlice"; // Added
+// import departmentsReducer from "@/features/departments/store/departmentsSlice";
 
 export const store = configureStore({
   reducer: {
@@ -17,6 +22,11 @@ export const store = configureStore({
     ui: uiReducer,
     schedules: schedulesReducer,
     positions: positionsReducer,
+    leaves: leavesReducer, // Added
+    timeclocks: timeclocksReducer, // Added
+    payroll: payrollReducer, // Added
+    employees: employeesReducer, // Added
+    // departments: departmentsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

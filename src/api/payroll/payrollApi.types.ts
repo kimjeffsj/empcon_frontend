@@ -1,3 +1,4 @@
+import { User } from "../auth/authApi.types";
 import {
   PaginatedResponse,
   SearchQueryParams,
@@ -49,6 +50,13 @@ export interface PayAdjustmentDto {
   createdBy: string;
 }
 
+export interface PayAdjustment {
+  id: string;
+  amount: number;
+  reason: string;
+  createdBy: string;
+}
+
 export interface PayPeriodCalculation {
   id: string;
   userId: string;
@@ -56,19 +64,8 @@ export interface PayPeriodCalculation {
   overtimeHours: number;
   holidayHours: number;
   grossPay: number;
-  user: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    payRate: number | null;
-  };
-  adjustments: {
-    id: string;
-    amount: number;
-    reason: string;
-    createdBy: string;
-  }[];
+  user: User;
+  adjustments: PayAdjustment[];
 }
 
 export interface PayPeriodWithCalculations {
