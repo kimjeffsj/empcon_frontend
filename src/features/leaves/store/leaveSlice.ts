@@ -25,7 +25,6 @@ interface LeavesState {
   leaveBalances: LeaveBalanceListResponse | null;
   leaveRequests: LeaveRequestListResponse | null;
   currentLeaveRequest: LeaveRequest | null;
-  isLoading: boolean;
   error: string | null;
 }
 
@@ -35,7 +34,6 @@ const initialState: LeavesState = {
   leaveBalances: null,
   leaveRequests: null,
   currentLeaveRequest: null,
-  isLoading: false,
   error: null,
 };
 
@@ -287,86 +285,69 @@ const leavesSlice = createSlice({
     builder
       // getLeaveTypes
       .addCase(getLeaveTypes.pending, (state) => {
-        state.isLoading = true;
         state.error = null;
       })
       .addCase(getLeaveTypes.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.leaveTypes = action.payload; // Store the full response
       })
       .addCase(getLeaveTypes.rejected, (state, action) => {
-        state.isLoading = false;
         state.error = action.payload?.message || "Failed to fetch leave types";
       })
 
       // getUserLeaveBalances
       .addCase(getUserLeaveBalances.pending, (state) => {
-        state.isLoading = true;
         state.error = null;
       })
       .addCase(getUserLeaveBalances.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.userLeaveBalances = action.payload;
       })
       .addCase(getUserLeaveBalances.rejected, (state, action) => {
-        state.isLoading = false;
         state.error =
           action.payload?.message || "Failed to fetch user leave balances";
       })
 
       // getLeaveBalances (General)
       .addCase(getLeaveBalances.pending, (state) => {
-        state.isLoading = true;
         state.error = null;
       })
       .addCase(getLeaveBalances.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.leaveBalances = action.payload;
       })
       .addCase(getLeaveBalances.rejected, (state, action) => {
-        state.isLoading = false;
         state.error =
           action.payload?.message || "Failed to fetch leave balances";
       })
 
       // getLeaveRequests
       .addCase(getLeaveRequests.pending, (state) => {
-        state.isLoading = true;
         state.error = null;
       })
       .addCase(getLeaveRequests.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.leaveRequests = action.payload;
       })
       .addCase(getLeaveRequests.rejected, (state, action) => {
-        state.isLoading = false;
         state.error =
           action.payload?.message || "Failed to fetch leave requests";
       })
 
       // getLeaveRequestById
       .addCase(getLeaveRequestById.pending, (state) => {
-        state.isLoading = true;
         state.error = null;
         state.currentLeaveRequest = null;
       })
       .addCase(getLeaveRequestById.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.currentLeaveRequest = action.payload;
       })
       .addCase(getLeaveRequestById.rejected, (state, action) => {
-        state.isLoading = false;
         state.error =
           action.payload?.message || "Failed to fetch leave request details";
       })
 
       // createLeaveRequest
       .addCase(createLeaveRequest.pending, (state) => {
-        state.isLoading = true;
         state.error = null;
       })
       .addCase(createLeaveRequest.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.currentLeaveRequest = action.payload;
         // Add to the beginning of the list if it exists and matches current filters (simplified: just add)
         if (state.leaveRequests?.data) {
@@ -379,7 +360,6 @@ const leavesSlice = createSlice({
         }
       })
       .addCase(createLeaveRequest.rejected, (state, action) => {
-        state.isLoading = false;
         state.error =
           action.payload?.message || "Failed to create leave request";
       })
@@ -393,7 +373,6 @@ const leavesSlice = createSlice({
           action.type === processLeaveRequest.fulfilled.type ||
           action.type === cancelLeaveRequest.fulfilled.type,
         (state, action) => {
-          state.isLoading = false;
           const updatedRequest = action.payload;
           // Update in the list
           if (state.leaveRequests?.data) {
@@ -413,7 +392,6 @@ const leavesSlice = createSlice({
           action.type === processLeaveRequest.pending.type ||
           action.type === cancelLeaveRequest.pending.type,
         (state) => {
-          state.isLoading = true;
           state.error = null;
         }
       )
@@ -424,7 +402,7 @@ const leavesSlice = createSlice({
           action.type === cancelLeaveRequest.rejected.type,
         (state, action: PayloadAction<{ message: string } | undefined>) => {
           // Add type annotation for action
-          state.isLoading = false;
+
           state.error =
             action.payload?.message ||
             "Failed to update/process/cancel leave request";

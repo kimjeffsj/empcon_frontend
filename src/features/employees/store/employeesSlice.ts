@@ -10,14 +10,12 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 interface EmployeeState {
   employees: EmployeeListResponse | null;
   currentEmployee: Employee | null;
-  isLoading: boolean;
   error: string | null;
 }
 
 const initialState: EmployeeState = {
   employees: null,
   currentEmployee: null,
-  isLoading: false,
   error: null,
 };
 
@@ -158,47 +156,37 @@ const employeesSlice = createSlice({
     builder
       // Get Employees
       .addCase(getEmployees.pending, (state) => {
-        state.isLoading = true;
         state.error = null;
       })
       .addCase(getEmployees.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.employees = action.payload;
         state.error = null;
       })
       .addCase(getEmployees.rejected, (state, action) => {
-        state.isLoading = false;
         state.error = action.payload?.message || "Failed to fetch employees";
       })
       // Get Employee by Id
       .addCase(getEmployeeById.pending, (state) => {
-        state.isLoading = true;
         state.error = null;
       })
       .addCase(getEmployeeById.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.currentEmployee = action.payload;
         state.error = null;
       })
       .addCase(getEmployeeById.rejected, (state, action) => {
-        state.isLoading = false;
         state.error = action.payload?.message || "Failed to fetch employee";
       })
 
       // createEmployee
-      .addCase(createEmployee.fulfilled, (state) => {
-        state.isLoading = false;
-      })
+      .addCase(createEmployee.fulfilled, (state) => {})
 
       // updateEmployee
       .addCase(updateEmployee.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.currentEmployee = action.payload;
       })
 
       // deleteEmployee
       .addCase(deleteEmployee.fulfilled, (state, action) => {
-        state.isLoading = false;
         if (state.employees && state.employees.data) {
           state.employees.data = state.employees.data.filter(
             (employee) => employee.id !== action.payload

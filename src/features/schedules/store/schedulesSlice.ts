@@ -13,14 +13,12 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 interface ScheduleState {
   schedules: ScheduleListResponse | null;
   currentSchedule: Schedule | null;
-  isLoading: boolean;
   error: string | null;
 }
 
 const initialState: ScheduleState = {
   schedules: null,
   currentSchedule: null,
-  isLoading: false,
   error: null,
 };
 
@@ -205,79 +203,63 @@ const schedulesSlice = createSlice({
     builder
       // getSchedules
       .addCase(getSchedules.pending, (state) => {
-        state.isLoading = true;
         state.error = null;
       })
       .addCase(getSchedules.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.schedules = action.payload;
         state.error = null;
       })
       .addCase(getSchedules.rejected, (state, action) => {
-        state.isLoading = false;
         state.error = action.payload?.message || "Failed to fetch schedules";
       })
 
       // getUserSchedules
       .addCase(getUserSchedules.pending, (state) => {
-        state.isLoading = true;
         state.error = null;
       })
       .addCase(getUserSchedules.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.schedules = action.payload;
         state.error = null;
       })
       .addCase(getUserSchedules.rejected, (state, action) => {
-        state.isLoading = false;
         state.error =
           action.payload?.message || "Failed to fetch user schedules";
       })
 
       // getScheduleById
       .addCase(getScheduleById.pending, (state) => {
-        state.isLoading = true;
         state.error = null;
       })
       .addCase(getScheduleById.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.currentSchedule = action.payload;
         state.error = null;
       })
       .addCase(getScheduleById.rejected, (state, action) => {
-        state.isLoading = false;
         state.error = action.payload?.message || "Failed to fetch schedule";
       })
 
       // createSchedule
-      .addCase(createSchedule.fulfilled, (state) => {
-        state.isLoading = false;
-      })
+      .addCase(createSchedule.fulfilled, (state) => {})
 
       // createBatchSchedules
       .addCase(createBatchSchedules.pending, (state) => {
-        state.isLoading = true;
         state.error = null;
       })
       .addCase(createBatchSchedules.fulfilled, (state, action) => {
-        state.isLoading = false;
         console.log(`Successfully created ${action.payload.count} schedules`);
       })
       .addCase(createBatchSchedules.rejected, (state, action) => {
-        state.isLoading = false;
         state.error =
           action.payload?.message || "Failed to create batch schedules";
       })
 
       // updateSchedule
       .addCase(updateSchedule.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.currentSchedule = action.payload;
       })
 
       // deleteSchedule
       .addCase(deleteSchedule.fulfilled, (state, action) => {
-        state.isLoading = false;
         if (state.schedules && state.schedules.data) {
           state.schedules.data = state.schedules.data.filter(
             (schedule) => schedule.id !== action.payload

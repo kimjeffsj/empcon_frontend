@@ -12,7 +12,6 @@ interface PositionsState {
   positions: PositionListResponse | null;
   currentPosition: Position | null;
   currentPositionUsers: PositionUserResponse | null;
-  isLoading: boolean;
   error: string | null;
 }
 
@@ -20,7 +19,6 @@ const initialState: PositionsState = {
   positions: null,
   currentPosition: null,
   currentPositionUsers: null,
-  isLoading: false,
   error: null,
 };
 
@@ -181,65 +179,52 @@ const positionsSlice = createSlice({
     builder
       // getPositions
       .addCase(getPositions.pending, (state) => {
-        state.isLoading = true;
         state.error = null;
       })
       .addCase(getPositions.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.positions = action.payload;
         state.error = null;
       })
       .addCase(getPositions.rejected, (state, action) => {
-        state.isLoading = false;
         state.error = action.payload?.message || "Failed to fetch positions";
       })
 
       // getPositionById
       .addCase(getPositionById.pending, (state) => {
-        state.isLoading = true;
         state.error = null;
       })
       .addCase(getPositionById.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.currentPosition = action.payload;
         state.error = null;
       })
       .addCase(getPositionById.rejected, (state, action) => {
-        state.isLoading = false;
         state.error = action.payload?.message || "Failed to fetch position";
       })
 
       // createPosition
-      .addCase(createPosition.fulfilled, (state) => {
-        state.isLoading = false;
-      })
+      .addCase(createPosition.fulfilled, (state) => {})
 
       // updatePosition
       .addCase(updatePosition.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.currentPosition = action.payload;
       })
 
       // getPositionUsers
       .addCase(getPositionUsers.pending, (state) => {
-        state.isLoading = true;
         state.currentPositionUsers = null;
         state.error = null;
       })
       .addCase(getPositionUsers.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.currentPositionUsers = action.payload;
         state.error = null;
       })
       .addCase(getPositionUsers.rejected, (state, action) => {
-        state.isLoading = false;
         state.error =
           action.payload?.message || "Failed to fetch position users";
       })
 
       // deletePosition
       .addCase(deletePosition.fulfilled, (state, action) => {
-        state.isLoading = false;
         if (state.positions && state.positions.data) {
           state.positions.data = state.positions.data.filter(
             (position) => position.id !== action.payload

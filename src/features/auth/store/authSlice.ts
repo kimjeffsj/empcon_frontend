@@ -6,14 +6,12 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  isLoading: boolean;
   error: string | null;
 }
 
 const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
-  isLoading: false,
   error: null,
 };
 
@@ -105,51 +103,40 @@ const authSlice = createSlice({
     builder
       // Login
       .addCase(login.pending, (state) => {
-        state.isLoading = true;
         state.error = null;
       })
       .addCase(login.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.error = null;
       })
       .addCase(login.rejected, (state, action) => {
-        state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
         state.error = action.payload?.message || "Login failed";
       })
 
       // Get current user
-      .addCase(getCurrentUser.pending, (state) => {
-        state.isLoading = true;
-      })
+      .addCase(getCurrentUser.pending, (state) => {})
       .addCase(getCurrentUser.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.isAuthenticated = true;
         state.user = action.payload;
         state.error = null;
       })
       .addCase(getCurrentUser.rejected, (state, action) => {
-        state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
         state.error = action.payload?.message || "Failed to verify session";
       })
 
       // Logout Thunk
-      .addCase(logoutThunk.pending, (state) => {
-        state.isLoading = true;
-      })
+      .addCase(logoutThunk.pending, (state) => {})
       .addCase(logoutThunk.fulfilled, (state) => {
-        state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
         state.error = null;
       })
       .addCase(logoutThunk.rejected, (state, action) => {
-        state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
         state.error = action.payload?.message || "Logout failed";

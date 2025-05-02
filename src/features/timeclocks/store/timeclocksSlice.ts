@@ -12,7 +12,6 @@ interface TimeClocksState {
   timeClocks: TimeClockListResponse | null;
   currentTimeClock: TimeClock | null;
   activeTimeClock: TimeClock | null;
-  isLoading: boolean;
   error: string | null;
 }
 
@@ -20,7 +19,6 @@ const initialState: TimeClocksState = {
   timeClocks: null,
   currentTimeClock: null,
   activeTimeClock: null,
-  isLoading: false,
   error: null,
 };
 
@@ -223,73 +221,58 @@ const timeClocksSlice = createSlice({
     builder
       // getTimeClocks
       .addCase(getTimeClocks.pending, (state) => {
-        state.isLoading = true;
         state.error = null;
       })
       .addCase(getTimeClocks.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.timeClocks = action.payload;
         state.error = null;
       })
       .addCase(getTimeClocks.rejected, (state, action) => {
-        state.isLoading = false;
         state.error = action.payload?.message || "Failed to fetch time clocks";
       })
 
       // getTimeClock
       .addCase(getTimeClock.pending, (state) => {
-        state.isLoading = true;
         state.error = null;
         state.currentTimeClock = null; // Clear current while fetching
       })
       .addCase(getTimeClock.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.currentTimeClock = action.payload;
         state.error = null;
       })
       .addCase(getTimeClock.rejected, (state, action) => {
-        state.isLoading = false;
         state.error = action.payload?.message || "Failed to fetch time clock";
       })
 
       // getActiveTimeClock
       .addCase(getActiveTimeClock.pending, (state) => {
-        state.isLoading = true;
         state.error = null;
       })
       .addCase(getActiveTimeClock.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.activeTimeClock = action.payload;
         state.error = null;
       })
       .addCase(getActiveTimeClock.rejected, (state, action) => {
-        state.isLoading = false;
         state.error =
           action.payload?.message || "Failed to fetch active time clock";
       })
 
       // getUserTimeClocks
       .addCase(getUserTimeClocks.pending, (state) => {
-        state.isLoading = true;
         state.error = null;
       })
       .addCase(getUserTimeClocks.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.timeClocks = action.payload; // Assuming this replaces the general list
         state.error = null;
       })
       .addCase(getUserTimeClocks.rejected, (state, action) => {
-        state.isLoading = false;
         state.error =
           action.payload?.message || "Failed to fetch user time clocks";
       })
 
       // clockIn
-      .addCase(clockIn.pending, (state) => {
-        state.isLoading = true;
-      })
+      .addCase(clockIn.pending, (state) => {})
       .addCase(clockIn.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.activeTimeClock = action.payload;
         // Optionally add to the beginning of the list if needed immediately
         // if (state.timeClocks && state.timeClocks.data) {
@@ -297,16 +280,12 @@ const timeClocksSlice = createSlice({
         // }
       })
       .addCase(clockIn.rejected, (state, action) => {
-        state.isLoading = false;
         state.error = action.payload?.message || "Failed to clock in";
       })
 
       // clockOut
-      .addCase(clockOut.pending, (state) => {
-        state.isLoading = true;
-      })
+      .addCase(clockOut.pending, (state) => {})
       .addCase(clockOut.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.activeTimeClock = null;
 
         // Update the specific time clock entry in the list or add if not present
@@ -323,16 +302,12 @@ const timeClocksSlice = createSlice({
         }
       })
       .addCase(clockOut.rejected, (state, action) => {
-        state.isLoading = false;
         state.error = action.payload?.message || "Failed to clock out";
       })
 
       // updateTimeClock
-      .addCase(updateTimeClock.pending, (state) => {
-        state.isLoading = true;
-      })
+      .addCase(updateTimeClock.pending, (state) => {})
       .addCase(updateTimeClock.fulfilled, (state, action) => {
-        state.isLoading = false;
         // Update the time clock in the list if it exists
         if (state.timeClocks && state.timeClocks.data) {
           state.timeClocks.data = state.timeClocks.data.map((tc: TimeClock) =>
@@ -348,16 +323,12 @@ const timeClocksSlice = createSlice({
         }
       })
       .addCase(updateTimeClock.rejected, (state, action) => {
-        state.isLoading = false;
         state.error = action.payload?.message || "Failed to update time clock";
       })
 
       // deleteTimeClock
-      .addCase(deleteTimeClock.pending, (state) => {
-        state.isLoading = true;
-      })
+      .addCase(deleteTimeClock.pending, (state) => {})
       .addCase(deleteTimeClock.fulfilled, (state, action) => {
-        state.isLoading = false;
         // Remove the time clock from the list
         if (state.timeClocks && state.timeClocks.data) {
           state.timeClocks.data = state.timeClocks.data.filter(
@@ -386,7 +357,6 @@ const timeClocksSlice = createSlice({
         }
       })
       .addCase(deleteTimeClock.rejected, (state, action) => {
-        state.isLoading = false;
         state.error = action.payload?.message || "Failed to delete time clock";
       });
   },
