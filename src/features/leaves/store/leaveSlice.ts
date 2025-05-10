@@ -5,18 +5,14 @@ import {
   LeaveRequestQueryParams,
   CreateLeaveRequestDto,
   UpdateLeaveRequestDto,
-  ProcessLeaveRequestDto, // Import ProcessLeaveRequestDto
-  UserLeaveBalancesResponse, // Import UserLeaveBalancesResponse
-  LeaveBalanceQueryParams, // Import LeaveBalanceQueryParams
+  ProcessLeaveRequestDto,
+  UserLeaveBalancesResponse,
+  LeaveBalanceQueryParams,
   LeaveTypeListResponse,
-  LeaveBalanceListResponse, // Import LeaveTypeListResponse
+  LeaveBalanceListResponse,
 } from "@/api/leave/leaveApi.types";
 import { addAlert, setLoading } from "@/store/uiSlice";
-import {
-  createAsyncThunk,
-  createSlice,
-  PayloadAction, // Import PayloadAction
-} from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { SearchQueryParams } from "@/api/common/commonApi.types";
 
 interface LeavesState {
