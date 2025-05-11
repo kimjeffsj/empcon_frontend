@@ -1,27 +1,21 @@
-import { useEffect } from "react";
-import { useAppDispatch, useAppSelector } from "@/store";
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, CheckCircle, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { getLeaveRequests } from "@/features/leaves/store/leaveSlice";
-import { LeaveStatus } from "@/api/leave/leaveApi.types";
 
-export const PendingRequestsCard = () => {
-  const dispatch = useAppDispatch();
+import { LeaveRequest } from "@/api/leave/leaveApi.types";
+
+interface PendingRequestsCardProps {
+  isLoading: boolean;
+  pendingRequests: LeaveRequest[];
+}
+
+export const PendingRequestsCard = ({
+  isLoading,
+  pendingRequests,
+}: PendingRequestsCardProps) => {
   const navigate = useNavigate();
-  const { leaveRequests } = useAppSelector((state) => state.leaves);
-  const isLoading = useAppSelector(
-    (state) => state.ui.loading["getLeaveRequests"]
-  );
-
-  useEffect(() => {
-    dispatch(getLeaveRequests({ status: LeaveStatus.PENDING, limit: 5 }));
-  }, [dispatch]);
-
-  const pendingRequests = leaveRequests?.data || [];
 
   const handleViewAll = () => {
     navigate("/leaves");
