@@ -1,5 +1,6 @@
 import { employeeApi } from "@/api/employee/employeeApi";
 import {
+  CreateEmployeeDto,
   Employee,
   EmployeeListResponse,
   EmployeeQueryParams,
@@ -62,7 +63,7 @@ export const getEmployeeById = createAsyncThunk<
 
 export const createEmployee = createAsyncThunk<
   Employee,
-  any,
+  CreateEmployeeDto,
   { rejectValue: { message: string } }
 >(
   "employees/createEmployee",
@@ -80,7 +81,7 @@ export const createEmployee = createAsyncThunk<
       const errorMessage =
         error.response?.data?.message || "Failed to create employee";
       dispatch(addAlert({ type: "error", message: errorMessage }));
-      return rejectWithValue(errorMessage);
+      return rejectWithValue({ message: errorMessage });
     } finally {
       dispatch(setLoading({ key: "createEmployee", isLoading: false }));
     }

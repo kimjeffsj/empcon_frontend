@@ -8,9 +8,9 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ requiredRole }: ProtectedRouteProps) {
-  const { isAuthenticated, user, isLoading } = useAppSelector(
-    (state) => state.auth
-  );
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const isLoading = useAppSelector((state) => state.ui.loading.global);
+
   const navigate = useNavigate();
 
   useEffect(() => {

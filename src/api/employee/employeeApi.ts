@@ -22,6 +22,7 @@ export const employeeApi = {
     return response.data.data;
   },
   createEmployee: async (employee: CreateEmployeeDto) => {
+    console.log("[employeeApi.ts] Attempting to create employee:", employee);
     const response = await apiClient.post<{ message: string; data: Employee }>(
       "/users",
       employee

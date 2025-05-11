@@ -3,6 +3,7 @@ import {
   PaginatedResponse,
   SearchQueryParams,
 } from "../common/commonApi.types";
+import { PayPeriodType } from "../payroll/payrollApi.types";
 
 export type EmployeeListResponse = PaginatedResponse<Employee>;
 
@@ -10,12 +11,6 @@ export enum EmployeeRole {
   EMPLOYEE = "EMPLOYEE",
   MANAGER = "MANAGER",
   ADMIN = "ADMIN",
-}
-
-export enum PayPeriodType {
-  SEMI_MONTHLY = "SEMI_MONTHLY",
-  BI_WEEKLY = "BI_WEEKLY",
-  MONTHLY = "MONTHLY",
 }
 
 export interface EmployeeQueryParams extends SearchQueryParams {
@@ -28,7 +23,7 @@ export interface Employee extends User {
   dateOfBirth?: string;
   hireDate: string;
   terminationDate?: string;
-  payRate?: number;
+  payRate: number;
   payPeriodType?: PayPeriodType;
   overtimeEnabled: boolean;
   profile?: {
@@ -40,12 +35,15 @@ export interface Employee extends User {
 }
 
 export interface CreateEmployeeDto {
+  // Required fields
   email: string;
   password: string;
   firstName: string;
   lastName: string;
-  dateOfBirth?: string;
   hireDate: string;
+
+  // Optional fields
+  dateOfBirth?: string;
   terminationDate?: string;
   role?: EmployeeRole;
   departmentId?: string;
@@ -53,6 +51,8 @@ export interface CreateEmployeeDto {
   payRate?: number;
   payPeriodType?: PayPeriodType;
   overtimeEnabled?: boolean;
+
+  // Profile object (optional)
   profile?: {
     address?: string;
     socialInsuranceNumber?: string;
