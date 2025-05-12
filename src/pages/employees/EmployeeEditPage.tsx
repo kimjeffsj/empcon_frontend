@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm, SubmitHandler, Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
 import { useAppDispatch, useAppSelector } from "@/store";
 import MainLayout from "@/components/layout/MainLayout";
 import {
@@ -12,7 +11,8 @@ import {
 import { UpdateEmployeeDto } from "@/api/employee/employeeApi.types";
 import { getDepartments } from "@/features/departments/store/departmentsSlice";
 import { getPositions } from "@/features/positions/store/positionSlice";
-import { format } from "date-fns";
+import { parseISO } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { EmployeeRole } from "@/api/employee/employeeApi.types";
 import { PayPeriodType } from "@/api/payroll/payrollApi.types";
 import { toast } from "sonner";
@@ -98,21 +98,36 @@ const EmployeeEditPage = () => {
 
   useEffect(() => {
     if (currentEmployee) {
+      const vancouverTimeZone = "America/Vancouver";
       form.reset({
         email: currentEmployee.email,
         firstName: currentEmployee.firstName,
         lastName: currentEmployee.lastName,
         dateOfBirth: currentEmployee.dateOfBirth
-          ? format(new Date(currentEmployee.dateOfBirth), "yyyy-MM-dd")
+          ? formatInTimeZone(
+              parseISO(currentEmployee.dateOfBirth),
+              vancouverTimeZone,
+              "yyyy-MM-dd"
+            )
           : "",
-        hireDate: format(new Date(currentEmployee.hireDate), "yyyy-MM-dd"),
+        hireDate: formatInTimeZone(
+          parseISO(currentEmployee.hireDate),
+          vancouverTimeZone,
+          "yyyy-MM-dd"
+        ),
         terminationDate: currentEmployee.terminationDate
-          ? format(new Date(currentEmployee.terminationDate), "yyyy-MM-dd")
+          ? formatInTimeZone(
+              parseISO(currentEmployee.terminationDate),
+              vancouverTimeZone,
+              "yyyy-MM-dd"
+            )
           : "",
         role: currentEmployee.role,
         departmentId: currentEmployee.department?.id || "",
         positionId: currentEmployee.position?.id || "",
-        payRate: currentEmployee.payRate?.toString() || "",
+        payRate: currentEmployee.payRate
+          ? parseFloat(currentEmployee.payRate.toString()).toFixed(2)
+          : "",
         payPeriodType: currentEmployee.payPeriodType || PayPeriodType.BI_WEEKLY,
         overtimeEnabled: currentEmployee.overtimeEnabled ?? false,
         address: currentEmployee.profile?.address || "",
@@ -202,6 +217,17 @@ const EmployeeEditPage = () => {
       error: (err: any) =>
         err.message || "Failed to update employee information.",
     });
+  };
+
+  const handlePayRateBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    if (value && !isNaN(parseFloat(value))) {
+      form.setValue("payRate", parseFloat(value).toFixed(2), {
+        shouldValidate: true,
+      });
+    } else if (value.trim() === "") {
+      form.setValue("payRate", "", { shouldValidate: true });
+    }
   };
 
   if (!canEdit) {
@@ -363,7 +389,12 @@ const EmployeeEditPage = () => {
                     name="terminationDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Termination Date</FormLabel>
+                        <div className="flex gap-2">
+                          <FormLabel>Termination Date</FormLabel>
+                          <FormDescription>
+                            Enter only if the employee has been terminated
+                          </FormDescription>
+                        </div>
                         <FormControl>
                           <Input
                             type="date"
@@ -371,9 +402,7 @@ const EmployeeEditPage = () => {
                             value={field.value || ""}
                           />
                         </FormControl>
-                        <FormDescription>
-                          Enter only if the employee has been terminated
-                        </FormDescription>
+
                         <FormMessage />
                       </FormItem>
                     )}
@@ -500,22 +529,15 @@ const EmployeeEditPage = () => {
                       name="payRate"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Hourly Rate</FormLabel>
+                          <FormLabel>Pay Rate</FormLabel>
                           <FormControl>
-                            <div className="relative">
-                              <span className="absolute left-3 top-3 text-muted-foreground">
-                                $
-                              </span>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                className="pl-8"
-                                {...field}
-                                onChange={(e) => field.onChange(e.target.value)}
-                                value={field.value || ""}
-                              />
-                            </div>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="e.g., 17.50"
+                              {...field}
+                              onBlur={handlePayRateBlur}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

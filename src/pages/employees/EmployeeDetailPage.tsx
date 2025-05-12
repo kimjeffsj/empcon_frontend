@@ -27,7 +27,6 @@ import {
   Calendar,
   User,
   MapPin,
-  DollarSign,
   Clock,
 } from "lucide-react";
 
@@ -274,10 +273,9 @@ const EmployeeDetailPage = () => {
               {isManager && (
                 <div>
                   <p className="text-sm text-muted-foreground">Pay Rate</p>
-                  <p className="font-medium flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" />
+                  <p className="font-medium">
                     {currentEmployee.payRate
-                      ? `$${currentEmployee.payRate.toFixed(2)}`
+                      ? `$${Number(currentEmployee.payRate).toFixed(2)}`
                       : "-"}
                   </p>
                 </div>

@@ -21,12 +21,15 @@ export const updateEmployeeSchema = z.object({
     .string()
     .optional()
     .refine(
-      (val) =>
-        val === undefined ||
-        val.trim() === "" ||
-        (!isNaN(parseFloat(val)) && parseFloat(val) >= 0),
+      (val) => {
+        if (val === undefined || val.trim() === "") return true; // Optional and can be empty
+        if (!/^\d*\.?\d{0,2}$/.test(val)) return false; // Basic format check (allows numbers like .50, 12, 12.5, 12.50)
+        const num = parseFloat(val);
+        return !isNaN(num) && num >= 0;
+      },
       {
-        message: "Please enter a valid positive number for pay rate.",
+        message:
+          "Pay rate must be a valid positive number with up to two decimal places (e.g., 17.50 or 20).",
       }
     ),
   payPeriodType: z.nativeEnum(PayPeriodType).optional(),

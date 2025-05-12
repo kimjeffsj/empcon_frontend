@@ -7,7 +7,6 @@ import MainLayout from "@/components/layout/MainLayout";
 import { createEmployee } from "@/features/employees/store/employeesSlice";
 import { getDepartments } from "@/features/departments/store/departmentsSlice";
 import { getPositions } from "@/features/positions/store/positionSlice";
-import { format } from "date-fns";
 import {
   CreateEmployeeDto,
   EmployeeRole,
@@ -70,10 +69,22 @@ const EmployeeCreatePage = () => {
   const form = useForm<CreateEmployeeFormData>({
     resolver: zodResolver(createEmployeeSchema),
     defaultValues: {
+      email: "",
+      password: "",
+      firstName: "",
+      lastName: "",
+      dateOfBirth: "",
+      hireDate: "",
       role: EmployeeRole.EMPLOYEE,
-      hireDate: format(new Date(), "yyyy-MM-dd"),
-      overtimeEnabled: true,
+      departmentId: "",
+      positionId: "",
+      payRate: "",
       payPeriodType: PayPeriodType.BI_WEEKLY,
+      overtimeEnabled: true,
+      address: "",
+      socialInsuranceNumber: "",
+      comments: "",
+      emergencyContact: "",
     },
   });
 
@@ -95,6 +106,17 @@ const EmployeeCreatePage = () => {
       form.setValue("password", generatePassword());
     }
   }, [autoGeneratePassword, form]);
+
+  const handlePayRateBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    if (value && !isNaN(parseFloat(value))) {
+      form.setValue("payRate", parseFloat(value).toFixed(2), {
+        shouldValidate: true,
+      });
+    } else if (value.trim() === "") {
+      form.setValue("payRate", "", { shouldValidate: true });
+    }
+  };
 
   // Form submit handler
   const onSubmit = async (data: CreateEmployeeFormData) => {
@@ -451,20 +473,15 @@ const EmployeeCreatePage = () => {
                     name="payRate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Hourly Rate</FormLabel>
+                        <FormLabel>Pay Rate</FormLabel>
                         <FormControl>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1.75 text-muted-foreground">
-                              $
-                            </span>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0.00"
-                              className="pl-8"
-                              {...field}
-                            />
-                          </div>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="e.g., 17.50"
+                            {...field}
+                            onBlur={handlePayRateBlur}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
