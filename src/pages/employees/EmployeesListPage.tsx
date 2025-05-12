@@ -31,6 +31,7 @@ import {
   MoreHorizontal,
   RotateCw,
   Loader2,
+  Building2,
 } from "lucide-react";
 
 const EmployeesListPageContent = () => {
@@ -141,10 +142,16 @@ const EmployeesListPageContent = () => {
           <h1 className="text-3xl font-bold tracking-tight">
             Employee Management
           </h1>
-          <Button onClick={() => navigate("/employees/new")}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add New Employee
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate("/departments")}>
+              <Building2 className="mr-2 h-4 w-4" />
+              Organization Settings
+            </Button>
+            <Button onClick={() => navigate("/employees/new")}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add New Employee
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
