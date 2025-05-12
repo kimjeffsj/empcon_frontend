@@ -45,6 +45,7 @@ const EmployeesListPageContent = () => {
   const { loading } = useAppSelector((state) => state.ui);
 
   const isLoading = loading["getEmployees"];
+  const positionsLoading = loading["getPositions"];
 
   // Local state for filters
   const [search, setSearch] = useState("");
@@ -54,11 +55,30 @@ const EmployeesListPageContent = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Fetch departments and positions on component mount
+  // Filter positions based on selected department
+  const getFilteredPositions = () => {
+    if (!selectedDepartment || !positions?.data) return [];
+    return positions.data.filter(
+      (pos) => pos.departmentId === selectedDepartment
+    );
+  };
+
+  // Fetch departments on component mount
   useEffect(() => {
     dispatch(getDepartments({ limit: "100" }));
-    dispatch(getPositions({ limit: "100" }));
   }, [dispatch]);
+
+  // Fetch positions when department changes
+  useEffect(() => {
+    if (selectedDepartment) {
+      dispatch(
+        getPositions({
+          departmentId: selectedDepartment,
+          limit: "100",
+        })
+      );
+    }
+  }, [selectedDepartment, dispatch]);
 
   // Debounced search function
   const debouncedFetch = useCallback(
@@ -83,6 +103,10 @@ const EmployeesListPageContent = () => {
       if (selectedStatus) params.isActive = selectedStatus;
 
       debouncedFetch(params);
+
+      return () => {
+        debouncedFetch.cancel();
+      };
     },
     [
       search,
@@ -112,6 +136,12 @@ const EmployeesListPageContent = () => {
     currentPage,
     fetchEmployees,
   ]);
+
+  // Handle department change
+  const handleDepartmentChange = (value: string) => {
+    setSelectedDepartment(value);
+    setSelectedPosition(""); // Reset position when department changes
+  };
 
   // Handle pagination
   const handlePageChange = (newPage: number) => {
@@ -179,7 +209,7 @@ const EmployeesListPageContent = () => {
               {/* Department filter */}
               <select
                 value={selectedDepartment}
-                onChange={(e) => setSelectedDepartment(e.target.value)}
+                onChange={(e) => handleDepartmentChange(e.target.value)}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="">All Departments</option>
@@ -194,14 +224,22 @@ const EmployeesListPageContent = () => {
               <select
                 value={selectedPosition}
                 onChange={(e) => setSelectedPosition(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={!selectedDepartment || positionsLoading}
               >
-                <option value="">All Positions</option>
-                {positions?.data?.map((position) => (
-                  <option key={position.id} value={position.id}>
-                    {position.title}
-                  </option>
-                ))}
+                <option value="">
+                  {positionsLoading
+                    ? "Loading positions..."
+                    : !selectedDepartment
+                    ? "Select department first"
+                    : "All Positions"}
+                </option>
+                {selectedDepartment &&
+                  getFilteredPositions().map((position) => (
+                    <option key={position.id} value={position.id}>
+                      {position.title}
+                    </option>
+                  ))}
               </select>
 
               {/* Role filter */}

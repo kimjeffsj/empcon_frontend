@@ -15,6 +15,7 @@ export interface Position {
 export interface CreatePositionDto {
   title: string;
   description?: string;
+  departmentId: string;
 }
 
 export interface UpdatePositionDto extends Partial<CreatePositionDto> {}

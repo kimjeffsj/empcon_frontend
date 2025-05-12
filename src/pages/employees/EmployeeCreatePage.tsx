@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ErrorBoundary } from "react-error-boundary";
 import { useAppDispatch, useAppSelector } from "@/store";
@@ -58,15 +58,11 @@ const EmployeeCreatePageContent = () => {
   const { loading } = useAppSelector((state) => state.ui);
 
   const isCreating = loading["createEmployee"];
+  const positionsLoading = loading["getPositions"];
+  const departmentsLoading = loading["getDepartments"];
 
   // Local state
   const [autoGeneratePassword, setAutoGeneratePassword] = useState(true);
-
-  // Fetch departments and positions
-  useEffect(() => {
-    dispatch(getDepartments({ limit: "100" }));
-    dispatch(getPositions({ limit: "100" }));
-  }, [dispatch]);
 
   // Form setup
   const form = useForm<CreateEmployeeFormData>({
@@ -91,6 +87,20 @@ const EmployeeCreatePageContent = () => {
     },
   });
 
+  // Watch for changes in the departmentId field
+  const watchedDepartmentId = useWatch({
+    control: form.control,
+    name: "departmentId",
+  });
+
+  // Filter positions based on selected department
+  const getFilteredPositions = () => {
+    if (!watchedDepartmentId || !positions?.data) return [];
+    return positions.data.filter(
+      (pos) => pos.departmentId === watchedDepartmentId
+    );
+  };
+
   // Generate random password
   const generatePassword = () => {
     const length = 12;
@@ -110,6 +120,36 @@ const EmployeeCreatePageContent = () => {
     }
   }, [autoGeneratePassword, form]);
 
+  // Fetch departments initially
+  useEffect(() => {
+    dispatch(getDepartments({ limit: "100" }));
+  }, [dispatch]);
+
+  // Fetch positions when departmentId changes
+  useEffect(() => {
+    if (watchedDepartmentId) {
+      const loadPositions = async () => {
+        try {
+          await dispatch(
+            getPositions({
+              departmentId: watchedDepartmentId,
+              limit: "100",
+            })
+          ).unwrap();
+        } catch (error) {
+          toast.error("Failed to load positions for this department");
+        }
+      };
+
+      loadPositions();
+
+      // Reset position field when department changes
+      form.setValue("positionId", "", { shouldValidate: true });
+    } else {
+      form.setValue("positionId", "", { shouldValidate: true });
+    }
+  }, [watchedDepartmentId, dispatch, form]);
+
   const handlePayRateBlur = (event: React.FocusEvent<HTMLInputElement>) => {
     const value = event.target.value;
     if (!value || value.trim() === "") {
@@ -126,6 +166,17 @@ const EmployeeCreatePageContent = () => {
     form.setValue("payRate", numericValue.toFixed(2), { shouldValidate: true });
   };
 
+  // Handle department change with confirmation
+  const handleDepartmentChange = (value: string, field: any) => {
+    if (form.getValues("positionId")) {
+      const confirmed = window.confirm(
+        "Changing department will reset the position selection. Continue?"
+      );
+      if (!confirmed) return;
+    }
+    field.onChange(value);
+  };
+
   // Form submit handler
   const onSubmit = async (data: CreateEmployeeFormData) => {
     try {
@@ -134,15 +185,11 @@ const EmployeeCreatePageContent = () => {
           ? parseFloat(data.payRate)
           : undefined;
 
-      // Zod 스키마가 이미 payRate 문자열을 검증하므로, 여기서의 수동 검증은 단순화하거나 제거 가능.
-      // createEmployeeSchema에서 payRate가 string().optional().refine(...)으로 정의됨.
-      // 여기서는 numericPayRate가 NaN인지 여부만 추가로 확인.
       if (
         data.payRate &&
         data.payRate.trim() !== "" &&
         numericPayRate === undefined
       ) {
-        // refine에서 이미 처리될 수 있으나, 예방적 조치
         form.setError("payRate", {
           type: "manual",
           message: "Pay rate must be a valid number.",
@@ -173,7 +220,7 @@ const EmployeeCreatePageContent = () => {
         role: data.role,
         departmentId: data.departmentId || undefined,
         positionId: data.positionId || undefined,
-        payRate: numericPayRate, // 여기서 숫자 또는 undefined
+        payRate: numericPayRate,
         payPeriodType: data.payPeriodType || undefined,
         overtimeEnabled: data.overtimeEnabled,
         profile: {
@@ -203,7 +250,6 @@ const EmployeeCreatePageContent = () => {
         error?.message ||
         "Failed to create employee. Please try again.";
       toast.error(errorMessage);
-      // 서버에서 오는 에러 메시지가 배열이나 객체일 경우에 대한 처리도 추가하면 좋음
       if (error?.data?.errors) {
         Object.entries(error.data.errors).forEach(([field, message]) => {
           form.setError(field as any, {
@@ -410,12 +456,21 @@ const EmployeeCreatePageContent = () => {
                       <FormItem>
                         <FormLabel>Department</FormLabel>
                         <Select
-                          onValueChange={field.onChange}
+                          onValueChange={(value) =>
+                            handleDepartmentChange(value, field)
+                          }
                           defaultValue={field.value}
+                          disabled={departmentsLoading}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select Department" />
+                              <SelectValue
+                                placeholder={
+                                  departmentsLoading
+                                    ? "Loading departments..."
+                                    : "Select Department"
+                                }
+                              />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -438,19 +493,39 @@ const EmployeeCreatePageContent = () => {
                         <FormLabel>Position</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
+                          disabled={!watchedDepartmentId || positionsLoading}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select Position" />
+                              <SelectValue
+                                placeholder={
+                                  positionsLoading
+                                    ? "Loading positions..."
+                                    : !watchedDepartmentId
+                                    ? "Select department first"
+                                    : "Select Position"
+                                }
+                              />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {positions?.data?.map((pos) => (
+                            {getFilteredPositions().map((pos) => (
                               <SelectItem key={pos.id} value={pos.id}>
                                 {pos.title}
                               </SelectItem>
                             ))}
+                            {!watchedDepartmentId && (
+                              <div className="p-2 text-sm text-muted-foreground">
+                                Select a department first
+                              </div>
+                            )}
+                            {watchedDepartmentId &&
+                              getFilteredPositions().length === 0 && (
+                                <div className="p-2 text-sm text-muted-foreground">
+                                  No positions found for this department
+                                </div>
+                              )}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -647,7 +722,7 @@ const EmployeeCreatePage = () => {
     <ErrorBoundary
       FallbackComponent={ErrorFallback}
       onReset={() => {
-        window.location.reload(); /* or other reset logic */
+        window.location.reload();
       }}
     >
       <EmployeeCreatePageContent />

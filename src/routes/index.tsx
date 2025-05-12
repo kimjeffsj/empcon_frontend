@@ -16,7 +16,6 @@ import LeavesPage from "@/pages/leaves/LeavesPage";
 import MyPayrollPage from "@/pages/payroll/MyPayrollPage";
 import PayPeriodDetailPage from "@/pages/payroll/PayPeriodDetailPage";
 import PayrollPage from "@/pages/payroll/PayrollPage";
-import PositionsPage from "@/pages/positions/PositionsPage";
 import ProfilePage from "@/pages/profile/ProfilePage";
 import ReportsPage from "@/pages/reports/ReportsPage";
 import ScheduleCreatePage from "@/pages/schedules/ScheduleCreatePage";
@@ -66,9 +65,6 @@ export default function AppRouter() {
 
           {/* Departments */}
           <Route path="/departments" element={<DepartmentsPage />} />
-
-          {/* Positions */}
-          <Route path="/positions" element={<PositionsPage />} />
 
           {/* Schedules */}
           <Route path="/schedules/new" element={<ScheduleCreatePage />} />

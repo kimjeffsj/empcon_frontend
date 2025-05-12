@@ -202,11 +202,32 @@ const positionsSlice = createSlice({
       })
 
       // createPosition
-      .addCase(createPosition.fulfilled, (state) => {})
+      .addCase(createPosition.fulfilled, (state, action) => {
+        if (state.positions?.data) {
+          state.positions.data.push(action.payload);
+          state.positions.total = (state.positions.total || 0) + 1;
+        } else {
+          state.positions = {
+            data: [action.payload],
+            total: 1,
+            page: 1,
+            limit: 100,
+            totalPages: 1,
+          };
+        }
+      })
 
       // updatePosition
       .addCase(updatePosition.fulfilled, (state, action) => {
         state.currentPosition = action.payload;
+        if (state.positions?.data) {
+          const index = state.positions.data.findIndex(
+            (pos) => pos.id === action.payload.id
+          );
+          if (index !== -1) {
+            state.positions.data[index] = action.payload;
+          }
+        }
       })
 
       // getPositionUsers
@@ -225,10 +246,11 @@ const positionsSlice = createSlice({
 
       // deletePosition
       .addCase(deletePosition.fulfilled, (state, action) => {
-        if (state.positions && state.positions.data) {
+        if (state.positions?.data) {
           state.positions.data = state.positions.data.filter(
             (position) => position.id !== action.payload
           );
+          state.positions.total = (state.positions.total || 1) - 1;
         }
       });
   },

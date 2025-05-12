@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useForm, SubmitHandler, Control } from "react-hook-form";
+import { useForm, SubmitHandler, Control, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ErrorBoundary } from "react-error-boundary";
 import { useAppDispatch, useAppSelector } from "@/store";
@@ -45,6 +45,7 @@ const EmployeeEditPageContent = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const isInitialLoadComplete = useRef(false);
 
   const { currentEmployee } = useAppSelector((state) => state.employees);
   const { departments } = useAppSelector((state) => state.departments);
@@ -54,6 +55,8 @@ const EmployeeEditPageContent = () => {
 
   const isLoadingPage = loading["getEmployeeById"];
   const isUpdating = loading["updateEmployee"];
+  const positionsLoading = loading["getPositions"];
+  const departmentsLoading = loading["getDepartments"];
 
   const isOwnProfile = user?.id === id;
   const isManager =
@@ -64,28 +67,49 @@ const EmployeeEditPageContent = () => {
     resolver: zodResolver(updateEmployeeSchema),
   });
 
+  // Watch for changes in the departmentId field
+  const watchedDepartmentId = useWatch({
+    control: form.control,
+    name: "departmentId",
+  });
+
+  // Filter positions based on selected department
+  const getFilteredPositions = () => {
+    if (!watchedDepartmentId || !positions?.data) return [];
+    return positions.data.filter(
+      (pos) => pos.departmentId === watchedDepartmentId
+    );
+  };
+
+  // Initial data load
   useEffect(() => {
     if (id) {
-      dispatch(getEmployeeById(id));
-      dispatch(getDepartments({ limit: "100" }));
-      dispatch(getPositions({ limit: "100" }));
+      Promise.all([
+        dispatch(getEmployeeById(id)),
+        dispatch(getDepartments({ limit: "100" })),
+      ]).then(() => {
+        isInitialLoadComplete.current = true;
+      });
     }
   }, [id, dispatch]);
 
+  // Form reset when employee data is loaded
   useEffect(() => {
-    if (currentEmployee) {
+    if (currentEmployee && isInitialLoadComplete.current) {
       form.reset({
-        email: currentEmployee.email,
-        firstName: currentEmployee.firstName,
-        lastName: currentEmployee.lastName,
+        email: currentEmployee.email || "",
+        firstName: currentEmployee.firstName || "",
+        lastName: currentEmployee.lastName || "",
         dateOfBirth: currentEmployee.dateOfBirth
           ? currentEmployee.dateOfBirth.substring(0, 10)
           : "",
-        hireDate: currentEmployee.hireDate.substring(0, 10),
+        hireDate: currentEmployee.hireDate
+          ? currentEmployee.hireDate.substring(0, 10)
+          : "",
         terminationDate: currentEmployee.terminationDate
           ? currentEmployee.terminationDate.substring(0, 10)
           : "",
-        role: currentEmployee.role,
+        role: currentEmployee.role || EmployeeRole.EMPLOYEE,
         departmentId: currentEmployee.department?.id || "",
         positionId: currentEmployee.position?.id || "",
         payRate: currentEmployee.payRate
@@ -99,8 +123,71 @@ const EmployeeEditPageContent = () => {
         comments: currentEmployee.profile?.comments || "",
         emergencyContact: currentEmployee.profile?.emergencyContact || "",
       });
+
+      // Load positions for the current department
+      if (currentEmployee.department?.id) {
+        dispatch(
+          getPositions({
+            departmentId: currentEmployee.department.id,
+            limit: "100",
+          })
+        );
+      }
     }
-  }, [currentEmployee, form, id]);
+  }, [currentEmployee, form, dispatch]);
+
+  // Set position value after positions are loaded
+  useEffect(() => {
+    if (currentEmployee && positions?.data && currentEmployee.position?.id) {
+      const employeePosition = positions.data.find(
+        (pos) => pos.id === currentEmployee.position?.id
+      );
+
+      if (employeePosition) {
+        form.setValue("positionId", employeePosition.id);
+      }
+    }
+  }, [currentEmployee, positions?.data, form]);
+
+  // Handle department changes
+  useEffect(() => {
+    if (
+      watchedDepartmentId &&
+      currentEmployee &&
+      isInitialLoadComplete.current
+    ) {
+      const loadPositions = async () => {
+        try {
+          await dispatch(
+            getPositions({
+              departmentId: watchedDepartmentId,
+              limit: "100",
+            })
+          ).unwrap();
+
+          // Reset position if department changed
+          if (watchedDepartmentId !== currentEmployee.department?.id) {
+            form.setValue("positionId", "");
+          }
+        } catch (error) {
+          toast.error("Failed to load positions for this department");
+        }
+      };
+
+      loadPositions();
+    }
+  }, [watchedDepartmentId, dispatch, form, currentEmployee]);
+
+  // Handle department change with confirmation
+  const handleDepartmentChange = (value: string, field: any) => {
+    if (form.getValues("positionId")) {
+      const confirmed = window.confirm(
+        "Changing department will reset the position selection. Continue?"
+      );
+      if (!confirmed) return;
+    }
+    field.onChange(value);
+  };
 
   const handlePayRateBlur = (event: React.FocusEvent<HTMLInputElement>) => {
     const value = event.target.value;
@@ -298,7 +385,7 @@ const EmployeeEditPageContent = () => {
                       <FormItem>
                         <FormLabel>Last Name *</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} value={field.value ?? ""} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -313,7 +400,7 @@ const EmployeeEditPageContent = () => {
                       <FormItem>
                         <FormLabel>First Name *</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} value={field.value ?? ""} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -330,7 +417,11 @@ const EmployeeEditPageContent = () => {
                       <FormItem>
                         <FormLabel>Email *</FormLabel>
                         <FormControl>
-                          <Input type="email" {...field} />
+                          <Input
+                            type="email"
+                            {...field}
+                            value={field.value ?? ""}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -348,7 +439,7 @@ const EmployeeEditPageContent = () => {
                           <Input
                             type="date"
                             {...field}
-                            value={field.value || ""}
+                            value={field.value ?? ""}
                           />
                         </FormControl>
                         <FormMessage />
@@ -378,7 +469,7 @@ const EmployeeEditPageContent = () => {
                           <Input
                             type="date"
                             {...field}
-                            value={field.value || ""}
+                            value={field.value ?? ""}
                           />
                         </FormControl>
                         <FormMessage />
@@ -397,12 +488,12 @@ const EmployeeEditPageContent = () => {
                           <Input
                             type="date"
                             {...field}
-                            value={field.value || ""}
+                            value={field.value ?? ""}
                           />
                         </FormControl>
-                        <FormDescription>
+                        {/* <FormDescription>
                           Leave empty if an active employee.
-                        </FormDescription>
+                        </FormDescription> */}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -420,7 +511,7 @@ const EmployeeEditPageContent = () => {
                           <FormLabel>Role *</FormLabel>
                           <Select
                             onValueChange={field.onChange}
-                            value={field.value}
+                            value={field.value || ""}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -452,12 +543,21 @@ const EmployeeEditPageContent = () => {
                         <FormItem>
                           <FormLabel>Department</FormLabel>
                           <Select
-                            onValueChange={field.onChange}
+                            onValueChange={(value) =>
+                              handleDepartmentChange(value, field)
+                            }
                             value={field.value || ""}
+                            disabled={departmentsLoading}
                           >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select Department" />
+                                <SelectValue
+                                  placeholder={
+                                    departmentsLoading
+                                      ? "Loading departments..."
+                                      : "Select Department"
+                                  }
+                                />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -473,9 +573,7 @@ const EmployeeEditPageContent = () => {
                       )}
                     />
                     <FormField
-                      control={
-                        form.control as Control<UpdateEmployeeFormData, any>
-                      }
+                      control={form.control}
                       name="positionId"
                       render={({ field }) => (
                         <FormItem>
@@ -483,18 +581,38 @@ const EmployeeEditPageContent = () => {
                           <Select
                             onValueChange={field.onChange}
                             value={field.value || ""}
+                            disabled={!watchedDepartmentId || positionsLoading}
                           >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select Position" />
+                                <SelectValue
+                                  placeholder={
+                                    positionsLoading
+                                      ? "Loading positions..."
+                                      : !watchedDepartmentId
+                                      ? "Select department first"
+                                      : "Select Position"
+                                  }
+                                />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {positions?.data?.map((pos) => (
+                              {getFilteredPositions().map((pos) => (
                                 <SelectItem key={pos.id} value={pos.id}>
                                   {pos.title}
                                 </SelectItem>
                               ))}
+                              {!watchedDepartmentId && (
+                                <div className="p-2 text-sm text-muted-foreground">
+                                  Select a department first
+                                </div>
+                              )}
+                              {watchedDepartmentId &&
+                                getFilteredPositions().length === 0 && (
+                                  <div className="p-2 text-sm text-muted-foreground">
+                                    No positions found for this department
+                                  </div>
+                                )}
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -506,7 +624,7 @@ const EmployeeEditPageContent = () => {
               </CardContent>
             </Card>
 
-            {/* Payroll Information Card - 접근 권한(isManager) 확인 필요, 현재 코드에서는 isManager일 때만 보임. */}
+            {/* Payroll Information Card */}
             {isManager && (
               <Card>
                 <CardHeader>
@@ -527,6 +645,7 @@ const EmployeeEditPageContent = () => {
                               type="text"
                               placeholder="e.g., 20.50"
                               {...field}
+                              value={field.value ?? ""}
                               onBlur={handlePayRateBlur}
                             />
                           </FormControl>
@@ -581,7 +700,7 @@ const EmployeeEditPageContent = () => {
                           <FormControl>
                             <input
                               type="checkbox"
-                              checked={field.value}
+                              checked={field.value || false}
                               onChange={(e) => field.onChange(e.target.checked)}
                               className="form-checkbox h-5 w-5 text-blue-600"
                             />
@@ -610,7 +729,7 @@ const EmployeeEditPageContent = () => {
                         <Input
                           placeholder="123 Main St, Anytown"
                           {...field}
-                          value={field.value || ""}
+                          value={field.value ?? ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -630,7 +749,7 @@ const EmployeeEditPageContent = () => {
                           <Input
                             placeholder="123-456-789"
                             {...field}
-                            value={field.value || ""}
+                            value={field.value ?? ""}
                             disabled={!isManager}
                           />
                         </FormControl>
@@ -650,7 +769,7 @@ const EmployeeEditPageContent = () => {
                           <Input
                             placeholder="Name - Phone Number"
                             {...field}
-                            value={field.value || ""}
+                            value={field.value ?? ""}
                           />
                         </FormControl>
                         <FormMessage />
@@ -668,7 +787,7 @@ const EmployeeEditPageContent = () => {
                         <textarea
                           {...field}
                           placeholder="Any additional notes..."
-                          value={field.value || ""}
+                          value={field.value ?? ""}
                           disabled={!isManager}
                           className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         />
