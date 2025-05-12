@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ErrorBoundary } from "react-error-boundary";
 import { useAppDispatch, useAppSelector } from "@/store";
 import MainLayout from "@/components/layout/MainLayout";
 import { createEmployee } from "@/features/employees/store/employeesSlice";
@@ -11,6 +12,8 @@ import {
   CreateEmployeeDto,
   EmployeeRole,
 } from "@/api/employee/employeeApi.types";
+import ErrorFallback from "@/components/common/ErrorFallback";
+import { toast } from "sonner";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -38,14 +41,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, RefreshCw, UserPlus } from "lucide-react";
+import { ArrowLeft, UserPlus, Loader2 } from "lucide-react";
 import {
   CreateEmployeeFormData,
   createEmployeeSchema,
 } from "./validations/createEmployee.schema";
 import { PayPeriodType } from "@/api/payroll/payrollApi.types";
 
-const EmployeeCreatePage = () => {
+const EmployeeCreatePageContent = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
@@ -109,57 +112,70 @@ const EmployeeCreatePage = () => {
 
   const handlePayRateBlur = (event: React.FocusEvent<HTMLInputElement>) => {
     const value = event.target.value;
-    if (value && !isNaN(parseFloat(value))) {
-      form.setValue("payRate", parseFloat(value).toFixed(2), {
-        shouldValidate: true,
-      });
-    } else if (value.trim() === "") {
+    if (!value || value.trim() === "") {
       form.setValue("payRate", "", { shouldValidate: true });
+      return;
     }
+
+    const numericValue = parseFloat(value);
+    if (isNaN(numericValue)) {
+      form.setError("payRate", { type: "manual", message: "Invalid number" });
+      return;
+    }
+
+    form.setValue("payRate", numericValue.toFixed(2), { shouldValidate: true });
   };
 
   // Form submit handler
   const onSubmit = async (data: CreateEmployeeFormData) => {
-    console.log("[EmployeeCreatePage.tsx] onSubmit called with data:", data);
     try {
       const numericPayRate =
         data.payRate && data.payRate.trim() !== ""
           ? parseFloat(data.payRate)
           : undefined;
 
+      // Zod 스키마가 이미 payRate 문자열을 검증하므로, 여기서의 수동 검증은 단순화하거나 제거 가능.
+      // createEmployeeSchema에서 payRate가 string().optional().refine(...)으로 정의됨.
+      // 여기서는 numericPayRate가 NaN인지 여부만 추가로 확인.
       if (
         data.payRate &&
         data.payRate.trim() !== "" &&
-        (numericPayRate === undefined || isNaN(numericPayRate))
+        numericPayRate === undefined
       ) {
+        // refine에서 이미 처리될 수 있으나, 예방적 조치
         form.setError("payRate", {
           type: "manual",
-          message: "Invalid number for pay rate",
+          message: "Pay rate must be a valid number.",
         });
         return;
       }
 
-      // 백엔드 DTO 구조에 맞게 데이터 변환
+      const hireDateTransformed = data.hireDate
+        ? new Date(data.hireDate).toISOString()
+        : "";
+      if (!hireDateTransformed) {
+        form.setError("hireDate", {
+          type: "manual",
+          message: "Hire date is required",
+        });
+        return;
+      }
+
       const createEmployeeDto: CreateEmployeeDto = {
-        // 필수 필드
         email: data.email,
         password: data.password,
         firstName: data.firstName,
         lastName: data.lastName,
-        hireDate: new Date(data.hireDate).toISOString(),
-
-        // 선택 필드
+        hireDate: hireDateTransformed,
         dateOfBirth: data.dateOfBirth
           ? new Date(data.dateOfBirth).toISOString()
           : undefined,
         role: data.role,
         departmentId: data.departmentId || undefined,
         positionId: data.positionId || undefined,
-        payRate: numericPayRate,
+        payRate: numericPayRate, // 여기서 숫자 또는 undefined
         payPeriodType: data.payPeriodType || undefined,
         overtimeEnabled: data.overtimeEnabled,
-
-        // 프로필 정보
         profile: {
           address: data.address || undefined,
           socialInsuranceNumber: data.socialInsuranceNumber || undefined,
@@ -168,7 +184,6 @@ const EmployeeCreatePage = () => {
         },
       };
 
-      // Clean up empty profile object
       if (
         !createEmployeeDto.profile?.address &&
         !createEmployeeDto.profile?.socialInsuranceNumber &&
@@ -179,16 +194,31 @@ const EmployeeCreatePage = () => {
       }
 
       const result = await dispatch(createEmployee(createEmployeeDto)).unwrap();
-
+      toast.success("Employee created successfully!");
       navigate(`/employees/${result.id}`);
     } catch (error: any) {
       console.error("Failed to create employee:", error);
+      const errorMessage =
+        error?.data?.message ||
+        error?.message ||
+        "Failed to create employee. Please try again.";
+      toast.error(errorMessage);
+      // 서버에서 오는 에러 메시지가 배열이나 객체일 경우에 대한 처리도 추가하면 좋음
+      if (error?.data?.errors) {
+        Object.entries(error.data.errors).forEach(([field, message]) => {
+          form.setError(field as any, {
+            type: "server",
+            message: message as string,
+          });
+        });
+      }
     }
   };
 
   // Form error handler
   const onError = (errors: any) => {
     console.error("[EmployeeCreatePage.tsx] Form validation errors:", errors);
+    toast.error("Please check the form for errors.");
   };
 
   return (
@@ -196,7 +226,12 @@ const EmployeeCreatePage = () => {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            aria-label="Go back"
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-3xl font-bold tracking-tight">
@@ -215,7 +250,7 @@ const EmployeeCreatePage = () => {
               <CardHeader>
                 <CardTitle>Basic Information</CardTitle>
                 <CardDescription>
-                  Enter the employee's basic information
+                  Enter the employee's basic information, email and password.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -227,13 +262,12 @@ const EmployeeCreatePage = () => {
                       <FormItem>
                         <FormLabel>Last Name *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Kim" {...field} />
+                          <Input placeholder="Doe" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="firstName"
@@ -241,67 +275,27 @@ const EmployeeCreatePage = () => {
                       <FormItem>
                         <FormLabel>First Name *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Cheolsu" {...field} />
+                          <Input placeholder="John" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email *</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="email"
-                            placeholder="example@company.com"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="dateOfBirth"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Date of Birth</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="autoGeneratePassword"
-                      checked={autoGeneratePassword}
-                      onChange={(e) =>
-                        setAutoGeneratePassword(e.target.checked)
-                      }
-                      className="rounded border-gray-300"
-                    />
-                    <label
-                      htmlFor="autoGeneratePassword"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Auto-generate temporary password
-                    </label>
-                  </div>
-
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="john.doe@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="space-y-2">
                   <FormField
                     control={form.control}
                     name="password"
@@ -309,35 +303,47 @@ const EmployeeCreatePage = () => {
                       <FormItem>
                         <FormLabel>Password *</FormLabel>
                         <FormControl>
-                          <div className="flex gap-2">
-                            <Input
-                              type="text"
-                              placeholder="Password"
-                              {...field}
-                              disabled={autoGeneratePassword}
-                            />
-                            {autoGeneratePassword && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                onClick={() =>
-                                  form.setValue("password", generatePassword())
-                                }
-                              >
-                                <RefreshCw className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
+                          <Input
+                            type="text"
+                            {...field}
+                            readOnly={autoGeneratePassword}
+                          />
                         </FormControl>
-                        <FormDescription>
-                          Securely share this password with the employee
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="autoPassword"
+                      checked={autoGeneratePassword}
+                      onChange={(e) =>
+                        setAutoGeneratePassword(e.target.checked)
+                      }
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label
+                      htmlFor="autoPassword"
+                      className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      Auto-generate password
+                    </label>
+                  </div>
                 </div>
+                <FormField
+                  control={form.control}
+                  name="dateOfBirth"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Date of Birth</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </CardContent>
             </Card>
 
@@ -346,7 +352,7 @@ const EmployeeCreatePage = () => {
               <CardHeader>
                 <CardTitle>Work Information</CardTitle>
                 <CardDescription>
-                  Enter the employee's work-related information
+                  Assign role, department, position and hire date.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -355,7 +361,7 @@ const EmployeeCreatePage = () => {
                     control={form.control}
                     name="hireDate"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="flex flex-col">
                         <FormLabel>Hire Date *</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} />
@@ -364,7 +370,6 @@ const EmployeeCreatePage = () => {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="role"
@@ -397,7 +402,6 @@ const EmployeeCreatePage = () => {
                     )}
                   />
                 </div>
-
                 <div className="grid gap-4 md:grid-cols-2">
                   <FormField
                     control={form.control}
@@ -426,7 +430,6 @@ const EmployeeCreatePage = () => {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="positionId"
@@ -443,9 +446,9 @@ const EmployeeCreatePage = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {positions?.data?.map((position) => (
-                              <SelectItem key={position.id} value={position.id}>
-                                {position.title}
+                            {positions?.data?.map((pos) => (
+                              <SelectItem key={pos.id} value={pos.id}>
+                                {pos.title}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -463,22 +466,21 @@ const EmployeeCreatePage = () => {
               <CardHeader>
                 <CardTitle>Payroll Information</CardTitle>
                 <CardDescription>
-                  Enter information for payroll calculation
+                  Set up payroll details for the employee.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="payRate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Pay Rate</FormLabel>
+                        <FormLabel>Pay Rate (per hour)</FormLabel>
                         <FormControl>
                           <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="e.g., 17.50"
+                            type="text"
+                            placeholder="e.g., 20.50"
                             {...field}
                             onBlur={handlePayRateBlur}
                           />
@@ -487,70 +489,68 @@ const EmployeeCreatePage = () => {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="payPeriodType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Pay Period</FormLabel>
+                        <FormLabel>Pay Period Type</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select Period" />
+                              <SelectValue placeholder="Select Pay Period" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value={PayPeriodType.SEMI_MONTHLY}>
-                              Semi-monthly
-                            </SelectItem>
-                            <SelectItem value={PayPeriodType.BI_WEEKLY}>
-                              Bi-weekly
-                            </SelectItem>
-                            <SelectItem value={PayPeriodType.MONTHLY}>
-                              Monthly
-                            </SelectItem>
+                            {Object.values(PayPeriodType).map((type) => (
+                              <SelectItem key={type} value={type}>
+                                {type.replace("_", " ")}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="overtimeEnabled"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel>Overtime Pay</FormLabel>
-                          <FormDescription>
-                            Applied based on BC labor law
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <input
-                            type="checkbox"
-                            checked={field.value}
-                            onChange={field.onChange}
-                            className="rounded border-gray-300"
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
                 </div>
+                <FormField
+                  control={form.control}
+                  name="overtimeEnabled"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Overtime Pay
+                        </FormLabel>
+                        <FormDescription>
+                          Enable if this employee is eligible for overtime pay.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={field.onChange}
+                          className="form-checkbox h-5 w-5 text-blue-600"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
               </CardContent>
             </Card>
 
             {/* Additional Information */}
             <Card>
               <CardHeader>
-                <CardTitle>Additional Information</CardTitle>
-                <CardDescription>Enter optional information</CardDescription>
+                <CardTitle>Additional Information (Optional)</CardTitle>
+                <CardDescription>
+                  Provide any other relevant details about the employee.
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -560,43 +560,38 @@ const EmployeeCreatePage = () => {
                     <FormItem>
                       <FormLabel>Address</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter address" {...field} />
+                        <Input placeholder="123 Main St, Anytown" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="socialInsuranceNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>SIN (Social Insurance Number)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="123-456-789" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="emergencyContact"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Emergency Contact</FormLabel>
-                        <FormControl>
-                          <Input placeholder="010-1234-5678" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
+                <FormField
+                  control={form.control}
+                  name="socialInsuranceNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Social Insurance Number (SIN)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="123-456-789" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="emergencyContact"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Emergency Contact</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Name - Phone Number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="comments"
@@ -605,9 +600,9 @@ const EmployeeCreatePage = () => {
                       <FormLabel>Comments</FormLabel>
                       <FormControl>
                         <textarea
-                          className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                          placeholder="Enter additional comments"
                           {...field}
+                          placeholder="Any additional notes..."
+                          className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         />
                       </FormControl>
                       <FormMessage />
@@ -618,32 +613,45 @@ const EmployeeCreatePage = () => {
             </Card>
 
             {/* Submit Buttons */}
-            <div className="flex justify-end gap-4">
+            <div className="flex justify-end space-x-2">
               <Button
-                type="button"
                 variant="outline"
+                type="button"
                 onClick={() => navigate(-1)}
+                disabled={isCreating}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isCreating}>
+              <Button
+                type="submit"
+                disabled={isCreating}
+                className="min-w-[150px]"
+              >
                 {isCreating ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
-                  </>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Create Employee
-                  </>
+                  <UserPlus className="mr-2 h-4 w-4" />
                 )}
+                Create Employee
               </Button>
             </div>
           </form>
         </Form>
       </div>
     </MainLayout>
+  );
+};
+
+const EmployeeCreatePage = () => {
+  return (
+    <ErrorBoundary
+      FallbackComponent={ErrorFallback}
+      onReset={() => {
+        window.location.reload(); /* or other reset logic */
+      }}
+    >
+      <EmployeeCreatePageContent />
+    </ErrorBoundary>
   );
 };
 

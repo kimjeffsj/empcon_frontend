@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
-import { format } from "date-fns";
+import { formatToVancouverTime } from "@/utils/dateUtils";
 import { getNotifications } from "@/features/notifications/store/notificationsSlice";
 
 export const RecentNotifications = () => {
@@ -46,7 +46,10 @@ export const RecentNotifications = () => {
           <div className="flex justify-between items-start mb-1">
             <h3 className="font-medium text-sm">{notification.title}</h3>
             <span className="text-xs text-muted-foreground">
-              {format(new Date(notification.createdAt), "MM/dd HH:mm")}
+              {formatToVancouverTime(
+                new Date(notification.createdAt),
+                "MM/dd HH:mm"
+              )}
             </span>
           </div>
           <p className="text-sm">{notification.message}</p>

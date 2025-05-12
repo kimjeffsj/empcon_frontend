@@ -1,10 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, CheckCircle, XCircle } from "lucide-react";
-import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 
 import { LeaveRequest } from "@/api/leave/leaveApi.types";
+import { formatToVancouverTime } from "@/utils/dateUtils";
 
 interface PendingRequestsCardProps {
   isLoading: boolean;
@@ -62,8 +62,16 @@ export const PendingRequestsCard = ({
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {request.leaveType?.name} (
-                      {format(new Date(request.startDate), "yyyy-MM-dd")} ~{" "}
-                      {format(new Date(request.endDate), "yyyy-MM-dd")})
+                      {formatToVancouverTime(
+                        new Date(request.startDate),
+                        "yyyy-MM-dd"
+                      )}{" "}
+                      ~{" "}
+                      {formatToVancouverTime(
+                        new Date(request.endDate),
+                        "yyyy-MM-dd"
+                      )}
+                      )
                     </div>
                     {request.notes && (
                       <div className="text-sm mt-2">{request.notes}</div>

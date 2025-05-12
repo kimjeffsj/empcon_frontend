@@ -1,13 +1,16 @@
 import { useEffect, useState, useCallback, Fragment } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 import { useAppDispatch, useAppSelector } from "@/store";
 import MainLayout from "@/components/layout/MainLayout";
 import { getEmployees } from "@/features/employees/store/employeesSlice";
 import { getDepartments } from "@/features/departments/store/departmentsSlice";
 import { getPositions } from "@/features/positions/store/positionSlice";
 import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
 import { EmployeeRole } from "@/api/employee/employeeApi.types";
 import { debounce } from "lodash";
+import { formatToVancouverTime } from "@/utils/dateUtils";
+import { RoleBadge } from "@/components/common/RoleBadge";
+import ErrorFallback from "@/components/common/ErrorFallback";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -27,9 +30,10 @@ import {
   Eye,
   MoreHorizontal,
   RotateCw,
+  Loader2,
 } from "lucide-react";
 
-const EmployeesListPage = () => {
+const EmployeesListPageContent = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -93,6 +97,11 @@ const EmployeesListPage = () => {
   // Effect to fetch employees when filters or page change
   useEffect(() => {
     fetchEmployees(currentPage);
+
+    // Cleanup function to cancel debounced fetch on unmount or when dependencies change
+    return () => {
+      debouncedFetch.cancel();
+    };
   }, [
     search,
     selectedDepartment,
@@ -226,7 +235,7 @@ const EmployeesListPage = () => {
           <CardContent>
             {isLoading ? (
               <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : employees?.data?.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
@@ -282,24 +291,13 @@ const EmployeesListPage = () => {
                             {employee.position?.title || "-"}
                           </td>
                           <td className="p-4">
-                            <span
-                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                employee.role === EmployeeRole.ADMIN
-                                  ? "bg-purple-100 text-purple-700"
-                                  : employee.role === EmployeeRole.MANAGER
-                                  ? "bg-blue-100 text-blue-700"
-                                  : "bg-green-100 text-green-700"
-                              }`}
-                            >
-                              {employee.role === EmployeeRole.ADMIN
-                                ? "Admin"
-                                : employee.role === EmployeeRole.MANAGER
-                                ? "Manager"
-                                : "Employee"}
-                            </span>
+                            <RoleBadge role={employee.role} />
                           </td>
                           <td className="p-4 whitespace-nowrap">
-                            {format(new Date(employee.hireDate), "yyyy-MM-dd")}
+                            {formatToVancouverTime(
+                              employee.hireDate,
+                              "yyyy-MM-dd"
+                            )}
                           </td>
                           <td className="p-4">
                             <span
@@ -382,6 +380,10 @@ const EmployeesListPage = () => {
                             }
                             size="sm"
                             onClick={() => handlePageChange(page)}
+                            aria-label={`Go to page ${page}`}
+                            aria-current={
+                              page === currentPage ? "page" : undefined
+                            }
                           >
                             {page}
                           </Button>
@@ -404,6 +406,21 @@ const EmployeesListPage = () => {
         </Card>
       </div>
     </MainLayout>
+  );
+};
+
+const EmployeesListPage = () => {
+  return (
+    <ErrorBoundary
+      FallbackComponent={ErrorFallback}
+      onReset={() => {
+        // Reset the state of your app so the error doesn't happen again
+        // TODO: Consider more specific reset logic if needed, e.g., re-fetch data or clear filters
+        window.location.reload();
+      }}
+    >
+      <EmployeesListPageContent />
+    </ErrorBoundary>
   );
 };
 

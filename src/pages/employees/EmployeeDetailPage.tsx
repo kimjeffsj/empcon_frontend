@@ -6,8 +6,8 @@ import { getEmployeeById } from "@/features/employees/store/employeesSlice";
 import { getUserSchedules } from "@/features/schedules/store/schedulesSlice";
 import { getUserTimeClocks } from "@/features/timeclocks/store/timeclocksSlice";
 import { getUserLeaveBalances } from "@/features/leaves/store/leaveSlice";
-import { format } from "date-fns";
 import { EmployeeRole } from "@/api/employee/employeeApi.types";
+import { formatToVancouverTime } from "@/utils/dateUtils";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,6 @@ const EmployeeDetailPage = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
-  // Redux state
   const { currentEmployee } = useAppSelector((state) => state.employees);
   const { schedules } = useAppSelector((state) => state.schedules);
   const { timeClocks } = useAppSelector((state) => state.timeclocks);
@@ -47,12 +46,9 @@ const EmployeeDetailPage = () => {
   const isManager =
     user?.role === EmployeeRole.MANAGER || user?.role === EmployeeRole.ADMIN;
 
-  // Fetch employee data
   useEffect(() => {
     if (id) {
       dispatch(getEmployeeById(id));
-
-      // Also fetch related data
       const today = new Date();
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
       const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
@@ -61,8 +57,8 @@ const EmployeeDetailPage = () => {
         getUserSchedules({
           userId: id,
           params: {
-            startDate: format(startOfMonth, "yyyy-MM-dd"),
-            endDate: format(endOfMonth, "yyyy-MM-dd"),
+            startDate: formatToVancouverTime(startOfMonth, "yyyy-MM-dd"),
+            endDate: formatToVancouverTime(endOfMonth, "yyyy-MM-dd"),
           },
         })
       );
@@ -71,8 +67,8 @@ const EmployeeDetailPage = () => {
         getUserTimeClocks({
           userId: id,
           params: {
-            startDate: format(startOfMonth, "yyyy-MM-dd"),
-            endDate: format(endOfMonth, "yyyy-MM-dd"),
+            startDate: formatToVancouverTime(startOfMonth, "yyyy-MM-dd"),
+            endDate: formatToVancouverTime(endOfMonth, "yyyy-MM-dd"),
             limit: "10",
           },
         })
@@ -158,8 +154,8 @@ const EmployeeDetailPage = () => {
                 <p className="text-sm text-muted-foreground">Date of Birth</p>
                 <p className="font-medium">
                   {currentEmployee.dateOfBirth
-                    ? format(
-                        new Date(currentEmployee.dateOfBirth),
+                    ? formatToVancouverTime(
+                        currentEmployee.dateOfBirth,
                         "yyyy-MM-dd"
                       )
                     : "-"}
@@ -213,7 +209,10 @@ const EmployeeDetailPage = () => {
                 <p className="text-sm text-muted-foreground">Hire Date</p>
                 <p className="font-medium flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  {format(new Date(currentEmployee.hireDate), "yyyy-MM-dd")}
+                  {formatToVancouverTime(
+                    currentEmployee.hireDate,
+                    "yyyy-MM-dd"
+                  )}
                 </p>
               </div>
               <div>
@@ -236,8 +235,8 @@ const EmployeeDetailPage = () => {
                     Termination Date
                   </p>
                   <p className="font-medium">
-                    {format(
-                      new Date(currentEmployee.terminationDate),
+                    {formatToVancouverTime(
+                      currentEmployee.terminationDate,
                       "yyyy-MM-dd"
                     )}
                   </p>
@@ -307,11 +306,11 @@ const EmployeeDetailPage = () => {
                     >
                       <div>
                         <p className="font-medium">
-                          {format(new Date(schedule.startTime), "MM/dd")}
+                          {formatToVancouverTime(schedule.startTime, "MM/dd")}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {format(new Date(schedule.startTime), "HH:mm")} -{" "}
-                          {format(new Date(schedule.endTime), "HH:mm")}
+                          {formatToVancouverTime(schedule.startTime, "HH:mm")} -{" "}
+                          {formatToVancouverTime(schedule.endTime, "HH:mm")}
                         </p>
                       </div>
                       <span
@@ -396,15 +395,16 @@ const EmployeeDetailPage = () => {
                   >
                     <div>
                       <p className="font-medium">
-                        {format(new Date(clock.clockInTime), "MM/dd (E)")}
+                        {formatToVancouverTime(clock.clockInTime, "MM/dd (E)")}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Clock In: {format(new Date(clock.clockInTime), "HH:mm")}
+                        Clock In:{" "}
+                        {formatToVancouverTime(clock.clockInTime, "HH:mm")}
                         {clock.clockOutTime && (
                           <>
                             {" "}
                             | Clock Out:{" "}
-                            {format(new Date(clock.clockOutTime), "HH:mm")}
+                            {formatToVancouverTime(clock.clockOutTime, "HH:mm")}
                           </>
                         )}
                       </p>

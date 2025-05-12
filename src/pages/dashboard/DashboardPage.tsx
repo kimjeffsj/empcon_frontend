@@ -14,6 +14,7 @@ import { getUserLeaveBalances } from "@/features/leaves/store/leaveSlice";
 import { PendingRequestsCard } from "@/features/dashboard/components/PendingRequestCard";
 import { getLeaveRequests } from "@/features/leaves/store/leaveSlice";
 import { LeaveStatus } from "@/api/leave/leaveApi.types";
+import { formatToVancouverTime } from "@/utils/dateUtils";
 
 const DashboardPage = () => {
   const dispatch = useAppDispatch();
@@ -38,7 +39,8 @@ const DashboardPage = () => {
   const todayStr = format(today, "yyyy-MM-dd");
   const todaySchedules =
     schedules?.data?.filter(
-      (s) => format(new Date(s.startTime), "yyyy-MM-dd") === todayStr
+      (s) =>
+        formatToVancouverTime(new Date(s.startTime), "yyyy-MM-dd") === todayStr
     ) || [];
 
   // 대시보드 데이터 로딩
@@ -134,10 +136,13 @@ const DashboardPage = () => {
               schedulesLoading
                 ? ""
                 : (schedules?.data?.length ?? 0) > 0 && schedules
-                ? `${format(
+                ? `${formatToVancouverTime(
                     new Date(schedules.data![0].startTime),
                     "HH:mm"
-                  )} - ${format(new Date(schedules.data![0].endTime), "HH:mm")}`
+                  )} - ${formatToVancouverTime(
+                    new Date(schedules.data![0].endTime),
+                    "HH:mm"
+                  )}`
                 : "No schedule for today"
             }
             icon={<Calendar className="h-8 w-8 text-blue-500" />}

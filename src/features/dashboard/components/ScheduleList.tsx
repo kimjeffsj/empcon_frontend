@@ -1,5 +1,5 @@
 import { Schedule } from "@/api/schedule/scheduleApi.types";
-import { format } from "date-fns";
+import { formatToVancouverTime } from "@/utils/dateUtils";
 
 interface ScheduleListProps {
   schedules: Schedule[];
@@ -35,8 +35,8 @@ export const ScheduleList = ({
           <div className="flex justify-between items-start">
             <div>
               <div className="font-medium">
-                {format(new Date(schedule.startTime), "HH:mm")} -{" "}
-                {format(new Date(schedule.endTime), "HH:mm")}
+                {formatToVancouverTime(new Date(schedule.startTime), "HH:mm")} -{" "}
+                {formatToVancouverTime(new Date(schedule.endTime), "HH:mm")}
               </div>
               <div className="text-sm text-muted-foreground">
                 {schedule.scheduleType === "REGULAR"
