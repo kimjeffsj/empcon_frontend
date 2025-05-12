@@ -43,7 +43,7 @@ import { ArrowLeft, RefreshCw, UserPlus } from "lucide-react";
 import {
   CreateEmployeeFormData,
   createEmployeeSchema,
-} from "./validations/employee.schema";
+} from "./validations/createEmployee.schema";
 import { PayPeriodType } from "@/api/payroll/payrollApi.types";
 
 const EmployeeCreatePage = () => {
@@ -100,6 +100,23 @@ const EmployeeCreatePage = () => {
   const onSubmit = async (data: CreateEmployeeFormData) => {
     console.log("[EmployeeCreatePage.tsx] onSubmit called with data:", data);
     try {
+      const numericPayRate =
+        data.payRate && data.payRate.trim() !== ""
+          ? parseFloat(data.payRate)
+          : undefined;
+
+      if (
+        data.payRate &&
+        data.payRate.trim() !== "" &&
+        (numericPayRate === undefined || isNaN(numericPayRate))
+      ) {
+        form.setError("payRate", {
+          type: "manual",
+          message: "Invalid number for pay rate",
+        });
+        return;
+      }
+
       // 백엔드 DTO 구조에 맞게 데이터 변환
       const createEmployeeDto: CreateEmployeeDto = {
         // 필수 필드
@@ -116,7 +133,7 @@ const EmployeeCreatePage = () => {
         role: data.role,
         departmentId: data.departmentId || undefined,
         positionId: data.positionId || undefined,
-        payRate: Number(data.payRate) || undefined,
+        payRate: numericPayRate,
         payPeriodType: data.payPeriodType || undefined,
         overtimeEnabled: data.overtimeEnabled,
 
@@ -128,6 +145,16 @@ const EmployeeCreatePage = () => {
           emergencyContact: data.emergencyContact || undefined,
         },
       };
+
+      // Clean up empty profile object
+      if (
+        !createEmployeeDto.profile?.address &&
+        !createEmployeeDto.profile?.socialInsuranceNumber &&
+        !createEmployeeDto.profile?.comments &&
+        !createEmployeeDto.profile?.emergencyContact
+      ) {
+        delete createEmployeeDto.profile;
+      }
 
       const result = await dispatch(createEmployee(createEmployeeDto)).unwrap();
 

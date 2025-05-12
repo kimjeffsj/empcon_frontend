@@ -3,6 +3,9 @@ import { Provider } from "react-redux";
 import { store, useAppDispatch, useAppSelector } from "./store";
 import { getCurrentUser } from "./features/auth/store/authSlice";
 import AppRouter from "./routes";
+import { setLoading } from "./store/uiSlice";
+import { ToastNotifications } from "./components/ui/toast-notifications";
+import { Toaster } from "./components/ui/sonner";
 
 // ThemeProvider to manage dark/light mode
 const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
@@ -29,17 +32,21 @@ const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 // Auth initializer component to fetch user data on app start
 const AuthInitializer = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useAppDispatch();
-  const { isLoading } = useAppSelector((state) => state.auth);
+  const isLoading = useAppSelector(
+    (state) => state.ui.loading["authCheck"] || false
+  );
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
+      dispatch(setLoading({ key: "authCheck", isLoading: true }));
       try {
         await dispatch(getCurrentUser()).unwrap();
       } catch (error) {
         console.error("Authentication check failed:", error);
       } finally {
         setAuthChecked(true);
+        dispatch(setLoading({ key: "authCheck", isLoading: false }));
       }
     };
 
@@ -66,6 +73,28 @@ const App = () => {
       <ThemeProvider>
         <AuthInitializer>
           <AppRouter />
+          <ToastNotifications />
+          <Toaster
+            position="top-right"
+            richColors
+            closeButton
+            expand={false}
+            theme={
+              document.documentElement.classList.contains("dark")
+                ? "dark"
+                : "light"
+            }
+            toastOptions={{
+              classNames: {
+                toast: "sonner-toast",
+                title: "sonner-title",
+                description: "sonner-description",
+                actionButton: "sonner-action",
+                cancelButton: "sonner-cancel",
+                closeButton: "sonner-close",
+              },
+            }}
+          />
         </AuthInitializer>
       </ThemeProvider>
     </Provider>
