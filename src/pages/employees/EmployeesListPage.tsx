@@ -102,6 +102,12 @@ const EmployeesListPageContent = () => {
       if (selectedRole) params.role = selectedRole;
       if (selectedStatus) params.isActive = selectedStatus;
 
+      console.log("Filter params:", {
+        selectedDepartment,
+        selectedPosition,
+        params,
+      });
+
       debouncedFetch(params);
 
       return () => {
@@ -223,7 +229,10 @@ const EmployeesListPageContent = () => {
               {/* Position filter */}
               <select
                 value={selectedPosition}
-                onChange={(e) => setSelectedPosition(e.target.value)}
+                onChange={(e) => {
+                  console.log("Position selected:", e.target.value);
+                  setSelectedPosition(e.target.value);
+                }}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={!selectedDepartment || positionsLoading}
               >
